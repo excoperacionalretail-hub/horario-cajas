@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Horario del Local · Dotación Actual · v6.24</title>
+<title>Horario del Local · Dotación Actual · v6.25</title>
 <style>
   :root{
     /* La herramienta es de tema claro. Sin esto, un navegador en modo oscuro dibuja
@@ -1471,7 +1471,7 @@ function renderIdealConfig(){
 
   el.innerHTML = `<div class="cards">${cards}</div>
     <div class="small" style="margin-top:10px">${desglose}</div>
-    <div class="small" style="margin-top:4px">Es el mix que el sistema arma desde cero para la demanda de este local, dimensionado con <b>${nombreBase()}</b>. Es una aproximación rápida del mismo motor que usa RRHH; para el número oficial de la cadena, la herramienta de Mix de Contratos.</div>
+    <div class="small" style="margin-top:4px">Es el mix que el sistema arma desde cero para la demanda de este local, dimensionado con <b>${nombreBase()}</b>. Se calcula con el mismo motor que la herramienta de Mix de Contratos, así que es el número oficial de la cadena para este local.</div>
     ${pie}`;
 }
 
@@ -2109,112 +2109,245 @@ function pisoFTAuto(req, opd, cld){
   return Math.max(0, Math.round(bloques8/6));
 }
 
-function optimizarIdeal(reqProm, opd, cld){
-  const req = reqProm.map(r=>r.map(v=>Math.round(v)));
-  const residual = req.map(r=>r.slice());
-  const openG=Math.min(...opd), closeG=Math.max(...cld);
-  const posiciones = []; let guard=0; const wk=4.345;
+// ══════════════════════════════════════════════════════════════════════════════
+// MIX IDEAL · alineado con la vista gerencial (Mix de Contratos v10.8)
+//
+// El mix ideal que se muestra en esta herramienta se calcula con el MISMO motor
+// que usa la vista gerencial, que es el número oficial de la cadena. Antes de la
+// v6.25 esta pantalla usaba un optimizador propio, más rápido pero menos fino,
+// que proponía alrededor de un part time de más por local.
+//
+// Nada de esto afecta al horario de tu equipo real: eso lo arma `asignarEquipo`,
+// que no se toca.
+// ══════════════════════════════════════════════════════════════════════════════
 
+// Patrones de jornada por contrato, los de la vista gerencial.
+const PATR_MIX = {
+  'PT 16h': [ {len:8, dias:4}, {len:16, dias:2} ],                  // 4 h × 4  ó  8 h × 2
+  'PT 20h': [ {len:8, dias:5}, {len:10, dias:4} ],                  // 4 h × 5  ó  5 h × 4
+  'PT 24h': [ {len:8, dias:6}, {len:12, dias:4}, {len:16, dias:3} ],// 4 h × 6, 6 h × 4 u 8 h × 3
+  'PT 25h': [ {len:10, dias:5} ],                                   // 5 h × 5
+  'PT 32h': [ {len:16, dias:4} ],                                   // 8 h × 4
+};
+const APROV_MIX  = 55;   // mínimo de aprovechamiento del contrato, en %
+const DESC_FT_MIX = 24;  // 12 hs de descanso entre la salida de un día y la entrada del siguiente
+
+function optimizarMixGerencial(req, opd, cld, minFT){
+  minFT = minFT || 0;
+  const openS = Math.min(...opd), closeS = Math.max(...cld);
+  const residual = req.map(r=>r.slice());
+  const posiciones = [];
+  const wk = 4.345;
+  let guard = 0;
+
+  // PT: patrón fijo (mismo largo todos sus días); elige el mejor patrón y las mejores `dias` fechas dentro de las habilitadas
   function mejorPT(ctNombre, e){
-    let best=null;
-    for(const pat of PATRONES_PT[ctNombre]){
+    if(e % 2 !== 0) return null;   // los PT entran en hora en punto
+    let best = null;
+    for(const pat of PATR_MIX[ctNombre]){
       const P = PRESENCIA[pat.len];
-      const cands=[];
+      const cands = [];
       for(let d=0; d<7; d++){
-        if(e<opd[d]||e+P>cld[d]) continue;
-        let c=0; for(let s=e;s<e+P;s++) if(residual[d][s]>0) c++;
-        cands.push({d,c});
+        if(e < opd[d] || e+P > cld[d]) continue;
+        let c=0; for(let s=e; s<e+P; s++) if(residual[d][s]>0) c++;
+        cands.push({d, c});
       }
-      if(cands.length<pat.dias) continue;
+      if(cands.length < pat.dias) continue; // no hay suficientes días habilitados para este patrón
       cands.sort((a,b)=>b.c-a.c);
-      const elegidos = cands.slice(0,pat.dias);
-      const cov = elegidos.reduce((a,x)=>a+x.c,0);
-      if(!best||cov>best.cov) best = {cov, asig: elegidos.map(x=>({d:x.d,e,len:pat.len,pres:P}))};
+      const elegidos = cands.slice(0, pat.dias);
+      const cov = elegidos.reduce((a,x)=>a+x.c, 0);
+      if(!best || cov>best.cov) best = {cov, asig: elegidos.map(x=>({d:x.d, e, len:pat.len, pres:P}))};
     }
     return best;
   }
+
+  // FT: 6 días  // FT: 6 días × 8 hs (presencia 9 hs), franco 1 día, inicio libre con descanso ≥12 hs entre días consecutivos
   function mejorFT(){
-    const P=PRESENCIA[16];
-    const entradas=[]; for(let e=openG;e+P<=closeG;e++) entradas.push(e);
+    const P = PRESENCIA[16];
+    const entradas = []; for(let e=openS; e+P<=closeS; e++) entradas.push(e); // FT rota libre: sin restricción de entrada
     if(!entradas.length) return null;
-    const cov=[];
-    for(let d=0;d<7;d++) cov.push(entradas.map(e=>{ if(e<opd[d]||e+P>cld[d]) return -1e7; let c=0; for(let s=e;s<e+P;s++) if(residual[d][s]>0) c++; return c; }));
+    const cov = [];
+    for(let d=0;d<7;d++){
+      cov.push(entradas.map(e=>{
+        if(e < opd[d] || e+P > cld[d]) return -1e7; // fuera del horario del día
+        let c=0; for(let s=e;s<e+P;s++) if(residual[d][s]>0) c++; return c;
+      }));
+    }
     let best=null;
     for(let f=0; f<7; f++){
+      // cadena de 6 días: f+1 ... f+6 (mod 7); el franco corta la restricción de descanso
       const orden=[]; for(let k=1;k<=6;k++) orden.push((f+k)%7);
-      let cur=cov[orden[0]].slice();
-      const parents=[new Array(entradas.length).fill(-1)];
+      let dp = cov[orden[0]].map((c,i)=>({c, par:new Array(6).fill(-1)}));
+      const par = [entradas.map(()=>-1)];
+      let cur = cov[orden[0]].slice();
+      const parents = [new Array(entradas.length).fill(-1)];
       for(let k=1;k<6;k++){
-        const d=orden[k], prevD=orden[k-1];
-        const nxt=new Array(entradas.length).fill(-1e9), pr=new Array(entradas.length).fill(-1);
+        const d = orden[k], prevD = orden[k-1];
+        const nxt = new Array(entradas.length).fill(-1e9);
+        const pr = new Array(entradas.length).fill(-1);
         for(let i=0;i<entradas.length;i++){
           if(cur[i]<=-1e8) continue;
           for(let j=0;j<entradas.length;j++){
-            if(entradas[j]<entradas[i]+P-24) continue; // v4.2: descanso 12 hs
-            const v=cur[i]+cov[d][j];
-            if(v>nxt[j]){nxt[j]=v; pr[j]=i;}
+            // descanso: entrada del día siguiente + 48 − (salida) ≥ 20 slots  →  e_j ≥ e_i + P − 28
+            if(entradas[j] < entradas[i] + P - (48 - DESC_FT_MIX)) continue;
+            const v = cur[i] + cov[d][j];
+            if(v>nxt[j]){ nxt[j]=v; pr[j]=i; }
           }
         }
-        cur=nxt; parents.push(pr);
+        cur = nxt; parents.push(pr);
       }
       let bi=-1,bv=-1e9;
-      for(let i=0;i<entradas.length;i++) if(cur[i]>bv){bv=cur[i];bi=i;}
-      if(bi<0||bv<=0) continue;
-      if(!best||bv>best.cov){
+      for(let i=0;i<entradas.length;i++) if(cur[i]>bv){bv=cur[i]; bi=i;}
+      if(bi<0 || bv<=0) continue;
+      if(!best || bv>best.cov){
         const idx=[]; let i=bi;
-        for(let k=5;k>=0;k--){idx[k]=i;i=parents[k][i];}
-        best={cov:bv, asig: orden.map((d,k)=>({d,e:entradas[idx[k]],len:16,pres:P}))};
+        for(let k=5;k>=0;k--){ idx[k]=i; i=parents[k][i]; }
+        best = {cov:bv, asig: orden.map((d,k)=>({d, e:entradas[idx[k]], len:16, pres:P}))};
       }
     }
     return best;
   }
 
-  // v4.2: fase 0 - FTs del piso automatico, protegidos de la poda
-  const minFT = pisoFTAuto(req, opd, cld);
-  for(let k=0;k<minFT;k++){
+  // Fase 0: FTs forzados por piso (protegidos frente a la poda)
+  for(let k=0; k<minFT; k++){
     let r = mejorFT();
     if(!r){
-      const P0=PRESENCIA[16]; const asig=[];
-      for(let d=0;d<6;d++) asig.push({d, e: Math.min(opd[d], cld[d]-P0), len:16, pres:P0});
+      // sin demanda residual que justifique: FT estándar apertura, franco domingo
+      const P = PRESENCIA[16];
+      const asig=[]; for(let d=0;d<6;d++) asig.push({d, e: Math.min(opd[d], cld[d]-P), len:16, pres:P});
       r = {cov:0, asig};
     }
     for(const a of r.asig) for(let s=a.e;s<a.e+a.pres;s++) if(residual[a.d][s]>0) residual[a.d][s]--;
     posiciones.push({nombre:'FT 48h', ct:CONTRATOS['FT 48h'], cov:r.cov, asig:r.asig, score:0, forzado:true});
   }
 
-  while(guard++<200){
+  while(guard++ < 300){
     let totalRes=0; for(let d=0;d<7;d++) for(let s=0;s<48;s++) totalRes+=residual[d][s];
     if(totalRes===0) break;
-    let best=null;
+    let best=null, bestFallback=null;
+    const registrar = (cand)=>{
+      const util = cand.cov/(cand.ct.horas*2)*100;
+      const mejora = b => !b || cand.score < b.score-1e-9 ||
+        (Math.abs(cand.score-b.score)<1e-6 && cand.ct.horas>b.ct.horas);
+      if(util>=APROV_MIX && mejora(best)) best=cand;
+      if(mejora(bestFallback)) bestFallback=cand;
+    };
     for(const [nombre, ct] of Object.entries(CONTRATOS)){
-      const costoSem = ct.gsh*ct.horas;
+      if(ct.activo===false) continue;
+      const costoSem = ct.gsh*ct.horas + 0/wk;
       if(ct.tipo==='FT'){
-        const r=mejorFT();
-        if(r && r.cov>0){ const score=costoSemPos(ct,r.asig)/r.cov; if(!best||score<best.score) best={nombre,ct,...r,score}; }
+        const r = mejorFT();
+        if(r) registrar({nombre, ct, ...r, score:(costoSemPos(ct, r.asig)+0/wk)/r.cov});
       } else {
-        for(let e=openG; e+8<=closeG; e++){
-          const r=mejorPT(nombre,e);
-          if(r && r.cov>0){ const score=costoSemPos(ct,r.asig)/r.cov; if(!best||score<best.score) best={nombre,ct,...r,score}; }
+        for(let e=openS; e+8<=closeS; e++){
+          const r = mejorPT(nombre, e);
+          if(r && r.cov>0) registrar({nombre, ct, ...r, score:(costoSemPos(ct, r.asig)+0/wk)/r.cov});
         }
       }
     }
-    if(!best) break;
-    for(const a of best.asig) for(let s=a.e;s<a.e+a.pres;s++) if(residual[a.d][s]>0) residual[a.d][s]--;
-    posiciones.push(best);
+    const pick = best||bestFallback;
+    if(!pick) break;
+    for(const a of pick.asig) for(let s=a.e;s<a.e+a.pres;s++) if(residual[a.d][s]>0) residual[a.d][s]--;
+    posiciones.push(pick);
   }
-  // poda simple: sacar posiciones totalmente redundantes
-  function cobertura(){ const c=Array.from({length:7},()=>new Array(48).fill(0)); for(const p of posiciones) for(const a of p.asig) for(let s=a.e;s<a.e+a.pres;s++) c[a.d][s]++; return c; }
+
+  // ---- Poda ----
+  function cobertura(){
+    const c = Array.from({length:7}, ()=> new Array(48).fill(0));
+    for(const p of posiciones) for(const a of p.asig) for(let s=a.e;s<a.e+a.pres;s++) c[a.d][s]++;
+    return c;
+  }
+  const ordenPT = Object.entries(CONTRATOS).filter(([,c])=>c.tipo==='PT' && c.activo!==false).sort((a,b)=>a[1].horas-b[1].horas);
   let cambio=true, g2=0;
-  while(cambio&&g2++<15){
-    cambio=false; const cov=cobertura();
+  while(cambio && g2++<20){
+    cambio=false;
+    const cov=cobertura();
+    posiciones.sort((a,b)=> b.ct.horas*b.ct.gsh - a.ct.horas*a.ct.gsh);
     for(let i=0;i<posiciones.length;i++){
-      const p=posiciones[i]; if(p.forzado) continue; let redund=true;
-      for(const a of p.asig) for(let s=a.e;s<a.e+a.pres;s++) if(cov[a.d][s]-1<req[a.d][s]){ redund=false; break; }
-      if(redund){ for(const a of p.asig) for(let s=a.e;s<a.e+a.pres;s++) cov[a.d][s]--; posiciones.splice(i,1); i--; cambio=true; }
+      const p=posiciones[i];
+      const gap=[];
+      for(const a of p.asig) for(let s=a.e;s<a.e+a.pres;s++)
+        if(cov[a.d][s]-1 < req[a.d][s]) gap.push([a.d,s]);
+      if(gap.length===0){
+        if(p.forzado) continue;
+        for(const a of p.asig) for(let s=a.e;s<a.e+a.pres;s++) cov[a.d][s]--;
+        posiciones.splice(i,1); i--; cambio=true; continue;
+      }
+      if(p.ct.tipo==='FT') continue;
+      const gapM = Array.from({length:7}, ()=> new Array(48).fill(0));
+      for(const [d,s] of gap) gapM[d][s]=1;
+      for(const [nom,ct] of ordenPT){
+        if(ct.horas>=p.ct.horas) break;
+        if(gap.length>ct.horas*2+8) continue;
+        const backup=[]; for(let d=0;d<7;d++){ backup.push(residual[d]); residual[d]=gapM[d]; }
+        let ok=null;
+        for(let e=openS; e+8<=closeS && !ok; e++){
+          const r=mejorPT(nom, e);
+          if(r && r.cov===gap.length) ok=r;
+        }
+        for(let d=0;d<7;d++) residual[d]=backup[d];
+        if(ok){
+          for(const a of p.asig) for(let s=a.e;s<a.e+a.pres;s++) cov[a.d][s]--;
+          for(const a of ok.asig) for(let s=a.e;s<a.e+a.pres;s++) cov[a.d][s]++;
+          posiciones[i]={nombre:nom, ct, cov:ok.cov, asig:ok.asig, score:0};
+          cambio=true; break;
+        }
+      }
+    }
+  }
+
+  // ---- Consolidación de pares ----
+  const CAT = Object.entries(CONTRATOS).filter(([,c])=>c.tipo==='PT' && c.activo!==false).sort((a,b)=>a[1].costo-b[1].costo);
+  let fus=true, g3=0;
+  while(fus && g3++<15){
+    fus=false;
+    const cov=cobertura();
+    outer:
+    for(let i=0;i<posiciones.length;i++){
+      const p=posiciones[i]; if(p.ct.tipo==='FT') continue;
+      for(let j=i+1;j<posiciones.length;j++){
+        const q=posiciones[j]; if(q.ct.tipo==='FT') continue;
+        const gapM = Array.from({length:7}, ()=> new Array(48).fill(0));
+        let gapN=0, imposible=false;
+        const marca = Array.from({length:7}, ()=> new Array(48).fill(0));
+        for(const a of p.asig) for(let s=a.e;s<a.e+a.pres;s++) marca[a.d][s]++;
+        for(const a of q.asig) for(let s=a.e;s<a.e+a.pres;s++) marca[a.d][s]++;
+        for(let d=0;d<7 && !imposible;d++) for(let s=0;s<48;s++){
+          if(!marca[d][s]) continue;
+          const deficit = Math.max(0, req[d][s]-(cov[d][s]-marca[d][s]));
+          if(deficit>1){ imposible=true; break; }
+          if(deficit===1){ gapM[d][s]=1; gapN++; }
+        }
+        if(imposible) continue;
+        const costoPar = p.ct.costo+q.ct.costo;
+        for(const [nom,ct] of CAT){
+          if(ct.costo>=costoPar) break;
+          if(gapN>ct.horas*2+8) continue;
+          const backup=[]; for(let d=0;d<7;d++){ backup.push(residual[d]); residual[d]=gapM[d]; }
+          let ok=null;
+          for(let e=openS; e+8<=closeS && !ok; e++){
+            const r=mejorPT(nom, e);
+            if(r && r.cov===gapN) ok=r;
+          }
+          for(let d=0;d<7;d++) residual[d]=backup[d];
+          if(ok){
+            posiciones.splice(j,1);
+            posiciones[i]={nombre:nom, ct, cov:ok.cov, asig:ok.asig, score:0};
+            fus=true; break outer;
+          }
+        }
+      }
     }
   }
   return posiciones;
 }
+
+// Punto de entrada, con la misma firma de siempre para no tocar a quien la llama.
+function optimizarIdeal(reqProm, opd, cld){
+  const req = reqProm.map(r=>r.map(v=>Math.round(v)));
+  return optimizarMixGerencial(req, opd, cld, pisoFTAuto(req, opd, cld));
+}
+
 
 // ---------- sectores del local ----------
 // Los sectores que realmente tiene este local. Sale de los mismos datos que usa
@@ -2766,7 +2899,7 @@ function renderIdeal(pos, opd, cld){
     <div class="card"><div class="lbl">Mix ideal para esta demanda</div><div class="val">${nFT} FT + ${nPT} PT</div><div class="note">Costo ideal: <b>${fmtGsM(costoIdeal)}</b></div></div>
     <div class="card" style="border-color:${dif>=0?'var(--accent)':'var(--warn)'}"><div class="lbl">Diferencia mensual</div><div class="val" style="color:${dif>=0?'var(--accent)':'var(--warn)'}">${dif>=0?'':'−'}${fmtGsM(Math.abs(dif))}</div><div class="note">${dif>=0?'lo que podrías ahorrar':'el ideal sale más caro que tu equipo actual'} con este mix</div></div>
   </div>
-  <div class="small" style="margin-bottom:10px">Este mix cubre exactamente la misma demanda que tu horario actual — es una aproximación rápida del mismo motor que usa RRHH; para el número oficial de la cadena, consultá la herramienta de Mix de Contratos.</div>
+  <div class="small" style="margin-bottom:10px">Este mix cubre exactamente la misma demanda que tu horario actual y se calcula con el mismo motor que la herramienta de Mix de Contratos, así que coincide con el número oficial de la cadena.</div>
   <h2>Horario del mix ideal (referencia) · costos con recargo nocturno 30%</h2>
   <div class="tablewrap"><table><thead><tr><th>Posición</th>${DIAS.map(d=>`<th>${d}</th>`).join('')}</tr></thead><tbody>`;
   let iFT=0, iPT=0;

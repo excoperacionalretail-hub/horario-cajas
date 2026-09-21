@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Horario del Local · Dotación Actual · v6.26</title>
+<title>Horario del Local · Dotación Actual · v6.36</title>
 <style>
   :root{
     /* La herramienta es de tema claro. Sin esto, un navegador en modo oscuro dibuja
@@ -46,11 +46,15 @@
   .btn:disabled{opacity:.6; cursor:wait;}
   .btn.mini{padding:4px 8px; font-size:12px;}
   h2{font-family:Georgia,serif; font-size:17px; font-weight:600; border-bottom:1px solid var(--ink); padding-bottom:6px; margin:24px 0 12px;}
-  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px;}
-  .card{background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:12px; padding:12px 15px;}
-  .card .lbl{color:var(--muted); font-size:12px; margin-bottom:5px;}
-  .card .val{font-family:Georgia,serif; font-size:22px; font-weight:600;}
-  .card .note{font-size:12px; color:var(--muted); margin-top:3px;}
+  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px;}
+  .card{background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:12px; padding:16px 19px;}
+  .card .lbl{color:var(--muted); font-size:13.5px; font-weight:600; margin-bottom:7px;}
+  .card .val{font-family:Georgia,serif; font-size:30px; font-weight:600; line-height:1.15;}
+  .card .note{font-size:14px; color:var(--muted); margin-top:5px;}
+  /* la primera tarjeta lleva el veredicto, así que se le da más ancho */
+  #idealConfig .cards{grid-template-columns:1.3fr 1fr 1fr;}
+  #idealConfig .card{display:flex; flex-direction:column; justify-content:center;}
+  @media (max-width:980px){ #idealConfig .cards{grid-template-columns:1fr;} }
   table{border-collapse:collapse; width:100%; background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:10px; overflow:hidden;}
   th{background:#eaf1f7; text-align:left; padding:7px 9px; font-size:11.5px; text-transform:uppercase; letter-spacing:.4px; color:#4a5450; border-bottom:1px solid var(--line);}
   td{padding:6px 9px; border-bottom:1px solid #eef3f7; vertical-align:middle;}
@@ -168,6 +172,13 @@
              box-shadow:0 10px 30px rgba(0,0,0,.3); pointer-events:auto; font-size:14px; line-height:1.5;}
   #tourGlobo .tpaso{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px;}
   #tourGlobo .tbot{display:flex; gap:6px; margin-top:12px; flex-wrap:wrap;}
+  /* el veredicto de la primera tarjeta: hace falta part time, o no */
+  .vok{margin-top:11px; background:var(--accent-soft); border:1px solid var(--accent); color:var(--accent);
+       border-radius:9px; padding:10px 13px; font-size:15px; font-weight:700; line-height:1.35;}
+  .vneed{margin-top:11px; background:var(--gold-soft); border:1px solid var(--gold); color:var(--gold);
+         border-radius:9px; padding:10px 13px; font-size:15px; font-weight:700; line-height:1.35;}
+  .vs{display:inline-block; margin-left:9px; font-size:15px; font-weight:700; color:var(--gold);
+      background:var(--gold-soft); border:1px solid var(--gold); border-radius:9px; padding:4px 11px; vertical-align:middle;}
   @media (max-width:800px){ #manIndice{display:none;} }
   @media (max-width:700px){ body{padding:12px;} }
 </style>
@@ -287,8 +298,16 @@
 
   <div id="avisoRestaurado" class="okbanner" style="display:none"></div>
 
-  <div class="box">
-    <h3>Dotación ideal</h3>
+  <div class="box" id="boxDotacion" style="border-color:var(--accent); border-width:2px">
+    <div class="rowflex" id="pisoFTBox" style="justify-content:space-between; align-items:center; margin-bottom:12px">
+      <h3 style="margin:0">Dotación de tu local</h3>
+      <div class="rowflex" style="gap:9px; align-items:center; background:var(--accent-soft);
+                  border:1px solid var(--accent); border-radius:10px; padding:7px 12px">
+        <label for="pisoFT" style="margin:0; font-weight:700; color:var(--accent)">Introducí tu equipo full time:</label>
+        <input type="number" id="pisoFT" min="0" max="60" style="width:72px; font-weight:700; font-size:16px; text-align:center">
+        <button class="btn mini" id="btnPiso" style="background:var(--accent); color:#fff; border-color:var(--accent); font-weight:700">Recalcular</button>
+      </div>
+    </div>
     <div id="idealConfig"></div>
   </div>
 
@@ -318,7 +337,7 @@
         <option value="no">No aplicar</option>
         <option value="si">Aplicar</option>
       </select>
-      <span class="small" style="max-width:780px">Los full time alternan banda semana a semana: al que le toca la mañana en la semana 1 le toca la tarde en la 2, mañana otra vez en la 3, y así. Se intercambian de a pares —uno de mañana con uno de tarde—, así que <b>los turnos del local no cambian: cambia quién los hace</b>. Cada uno conserva su día libre y sus horas. Sirve para que el turno de cierre no caiga siempre sobre la misma gente. No entran en la rotación los part time, los turnos cortados ni las jornadas reducidas por maternidad.</span>
+      <span class="small" style="max-width:780px; font-size:13.5px">Cada semana los full time se cambian de banda: el que hizo mañana hace tarde. <b>Los turnos del local no cambian, cambia quién los hace</b>, y cada uno conserva su día libre y sus horas. No rotan los part time, los turnos cortados ni las jornadas por maternidad.</span>
     </div>
     <div class="small" id="rotNota" style="margin-top:8px"></div>
   </div>
@@ -333,22 +352,13 @@
       <input type="number" id="corteMin" min="0.5" max="8" step="0.5" value="1" style="width:65px"> hs
       <label>· máx</label>
       <input type="number" id="corteMax" min="1" max="10" step="0.5" value="4" style="width:65px"> hs
-      <span class="small">Al aplicar se habilitan las filas. La condición precarga la disponibilidad, pero podés ajustarla. El corte es el tiempo libre entre los dos bloques de un turno cortado.
-      En <b>Sector</b> podés fijar a alguien a un sector: queda asignado a ese puesto durante la ventana del sector y el resto de su turno sigue en línea de cajas. No cambia cuánta gente hace falta ni el costo — cambia quién atiende cada sector, que hasta ahora lo elegía el sistema.</span>
+      <span class="small" style="max-width:780px; font-size:13.5px">Poné cuántos son y tocá <b>Aplicar</b>: se habilitan las filas. <b>Corte</b>: horas libres entre los dos bloques de un turno cortado. <b>Sector</b>: fija a alguien a un puesto en la ventana de ese sector; el resto del turno lo hace en cajas. No cambia el costo.</span>
     </div>
     <div class="tablewrap"><table id="tablaEquipo"><thead><tr>
       <th style="width:30px">#</th><th>Nombre</th><th>Contrato</th><th>Condición</th>
       <th title="Fija a esa persona a un sector durante la ventana del sector. El resto de su turno sigue en línea de cajas.">Sector</th>
       <th>Estado</th><th>Disponible desde</th><th>hasta</th><th title="Día libre semanal de la persona. En Aleatorio lo elige el sistema buscando el día que menos afecta la cobertura.">Día libre</th><th title="Solo FT: permite dividir el día en dos bloques de 4 hs">Cortado</th>
     </tr></thead><tbody></tbody></table></div>
-    <div class="rowflex" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--line)">
-      <label for="selBaja">Si se va alguien:</label>
-      <select id="selBaja" style="min-width:180px"></select>
-      <button class="btn mini" id="btnBaja">Agregar baja</button>
-      <span class="small" style="max-width:600px">Podés ir sumando personas de a una para ver desde qué baja el equipo deja de cubrir el 100% y empiezan a hacer falta part time. Te digo cuánto hueco queda después de que el resto se reacomode, en qué franjas, con cuántos part time y de cuántas horas conviene reponerlo, y cuánto costaría la nómina si no reponés. Calcula sobre la <b>semana tipo</b> del plan base, así que no toma la rotación ni las ausencias parciales del tramo — es una referencia para decidir, no el horario definitivo.</span>
-    </div>
-    <div id="chipsBaja" class="small" style="margin-top:10px"></div>
-    <div id="respBaja" class="small" style="margin-top:10px; white-space:pre-line"></div>
   </div>
 
   <div class="box">
@@ -373,12 +383,10 @@
     </div>
     <div id="listaEventos" class="small">Sin eventos cargados.</div>
     <div class="small" id="evNota" style="margin-top:6px"></div>
-    <div class="small" style="margin-top:10px; padding-top:9px; border-top:1px solid var(--line); max-width:900px">
-      <b>¿Para qué sirve esta opción?</b> Se utiliza para registrar los días o períodos en los que se espera
-      una afluencia de clientes superior a la habitual por un motivo puntual: promociones de tiempo limitado,
-      lanzamientos, fechas comerciales, un evento deportivo de convocatoria masiva o cualquier circunstancia
-      que incremente la venta de manera transitoria. La demanda de las horas indicadas se incrementa en el
-      porcentaje que definas y el horario se arma sobre esa demanda corregida.
+    <div class="small" style="margin-top:10px; padding-top:9px; border-top:1px solid var(--line); max-width:900px; font-size:13.5px">
+      Días en que vas a vender más de lo normal: promoción, día de pago, fecha comercial. Sube la demanda de
+      esas horas el porcentaje que pongas y el horario se arma sobre esa demanda. Para un día suelto, la misma
+      fecha en los dos campos.
     </div>
   </div>
 
@@ -639,14 +647,19 @@ const MANUAL_SECS = [
       'La primera vez que entrás, el <b>recorrido guiado de Configuración</b> arranca solo y te muestra en pantalla para qué sirve cada control. Y la primera vez que tocás Generar horario arranca el <b>recorrido de Horarios</b>, que explica cada tabla del horario armado. Los dos quedan siempre a mano acá arriba, con un botón cada uno.',
     ])}
     <p class="mnota">La clave propia se guarda en esta computadora. Si te la olvidás, entrá desde otro navegador con tu correo (ahí no hay nada guardado) y configurala de nuevo.</p>
-    <p class="mnota">Administración entra con su propia clave y puede elegir cualquiera de los ${Object.keys(DATA).length} locales de la lista.</p>` },
+    <p class="mnota"><b>Administración</b> es la <b>primera opción</b> del desplegable, arriba de todos los locales. Entra con su propia clave y puede elegir cualquiera de los ${Object.keys(DATA).length} locales.</p>` },
 
   { id:'mes', t:'El mes y sus semanas', h:_tramoTxt },
 
-  { id:'ideal', t:'Dotación ideal', h:()=>`
-    <p>Es el mix de contratos que el sistema armaría <b>desde cero</b> para la demanda de tu local, con su costo. Aparece apenas entrás, antes de que cargues a nadie.</p>
-    <p>Se dimensiona con ${nombreBase()}, que son las semanas típicas del mes — ni la más cargada ni la más floja.</p>
-    <p>Cuando cargás tu equipo, al lado aparece <b>tu dotación actual</b> y la diferencia de costo entre las dos. Es una referencia para conversar, no una orden: el número oficial de la cadena sale de la herramienta de Mix de Contratos.</p>` },
+  { id:'ideal', t:'Dotación de tu local · los tres cubos', h:()=>`
+    <p>Es lo primero que ves al entrar. Tres cubos que contestan todo sin que tengas que leer nada más:</p>
+    ${_li([
+      '<b>Tu equipo hoy</b> — cuánta gente tenés, de qué contrato es cada part time y cuánto cuesta por mes con el recargo nocturno incluido. Abajo, resaltado, el veredicto: <i>«Con 10 full time necesitás 1 part time: PT 16h»</i>, o <i>«Con 12 full time no necesitás part time»</i>. Ahí se termina la discusión.',
+      '<b>Cobertura actual</b> — las horas que tenés contratadas por semana y, al lado, la demanda real del local. La diferencia entre esos dos números es lo que te sobra o te falta.',
+      '<b>Mix más barato para esta demanda</b> — el equipo que el sistema armaría desde cero para la misma demanda, y cuánto más cuesta el tuyo.',
+    ])}
+    <p>Todo se dimensiona con ${nombreBase()}, que son las semanas típicas del mes — ni la más cargada ni la más floja.</p>
+    <p class="mnota">El mix más barato se calcula con <b>el mismo motor</b> que la herramienta de Mix de Contratos, así que coincide con el número oficial de la cadena para tu local.</p>` },
 
   { id:'horario', t:'Horario del local', h:_horarioLocalTxt },
 
@@ -681,15 +694,18 @@ const MANUAL_SECS = [
     <h4>Cortado</h4>
     <p>Sólo para full time: parte el día en dos bloques de 4 horas con un hueco en el medio (el mínimo y el máximo de ese hueco se configuran arriba de la tabla). Sirve para cubrir el pico del mediodía y el de la tarde con la misma persona. No se aplica a jornadas reducidas.</p>` },
 
-  { id:'bajas', t:'Si se va alguien', h:()=>`
-    <p>Elegís a una persona y tocás <b>Agregar baja</b>. La herramienta rearma el horario con el resto del equipo y te dice:</p>
+  { id:'bajas', t:'Si se va alguien: el piso de full time', h:()=>`
+    <p>Es la pregunta del día a día: <b>con los full time que voy a tener, ¿me alcanza o me falta gente?</b></p>
+    <p>El campo <b>Introducí tu equipo full time</b> viene cargado con los que tenés hoy. Si se te va alguien, bajá el número en uno y tocá <b>Recalcular</b>. La herramienta arma la dotación más barata que cubre tu demanda respetando ese número, <b>la deja cargada en Mi equipo y genera el horario</b>, todo de una. Y te dice:</p>
     ${_li([
-      'cuánto hueco queda por semana que nadie llega a tapar, y en qué franjas exactamente',
-      'con cuántos part time y de cuántas horas conviene reponer — y no 1 a 1 con el mismo contrato que se fue',
-      'cuánto costaría la nómina si no reponés, y cuánto se ahorra',
+      'en el primer cubo, resaltado: si con esos full time alcanza, o cuántos part time hay que sumar y de cuántas horas cada uno',
+      'cuántas horas quedan contratadas frente a las que el local realmente necesita',
+      'cuánto cuesta por mes ese equipo, con el recargo nocturno incluido',
+      'cuánto más cuesta frente al mix más barato posible para la misma demanda',
     ])}
-    <p>Podés <b>ir sumando personas</b> de a una para ver desde qué baja el equipo deja de cubrir el 100% y recién ahí empiezan a hacer falta part time. Cada una queda como una etiqueta con una ✕ para sacarla, y el botón Limpiar borra todas.</p>
-    <p class="mnota">Es una simulación: no toca tu equipo ni tu horario. Calcula sobre la semana tipo, así que no toma la rotación ni las ausencias parciales.</p>` },
+    <p>Las personas no se pierden al recalcular: cada puesto se le asigna primero a alguien que ya tenía ese contrato, conservando su nombre, su condición, su día libre y su sector. Después de recalcular podés retocar lo que quieras en la tabla y volver a tocar <b>Generar horario</b>.</p>
+    <p><b>Sobre la diferencia de costo.</b> No dice que sobre gente. Dice cuánto cuesta por mes sostener el equipo que elegiste frente al mix más barato para la misma demanda. Es información para decidir.</p>
+    <p class="mnota">Cuando el resultado es «no necesitás part time», eso se mide contra la demanda calculada para tu local: no contempla ausencias, vacaciones ni picos fuera de lo normal. Si con ese piso queda alguna franja descubierta, te lo aviso igual. Calcula sobre la semana tipo, así que no toma la rotación ni las ausencias parciales.</p>` },
 
   { id:'ausentismo', t:'Ausentismo y eventos especiales', h:()=>`
     <p><b>Ausentismo</b> no agrega gente: marca en el horario las <b>franjas frágiles</b>, esas donde estás tan justo que una sola falta genera hueco.</p>
@@ -715,7 +731,13 @@ const MANUAL_SECS = [
     <p><b>2. Las columnas de texto.</b> A la izquierda de las barras están el <i>horario del día</i> y el <i>receso</i> que le corresponde. La barra no dibuja el receso como un corte a propósito: dónde cae exactamente dentro del turno lo decide el local según cómo venga la tarde.</p>
     <p><b>3. Las filas de control, abajo de todas las personas.</b> <i>Dotación activa</i> es cuánta gente hay atendiendo en cada hora, con su desglose en full time y part time. Y <i>Requeridos</i> es cuánta hace falta esa hora. Esa última fila viene pintada: <b>rojo</b> significa que falta gente, <b>amarillo</b> que estás justo —cubierto, pero sin margen para que alguien falte— y sin color que estás cubierto con holgura.</p>
     <p>La lectura práctica: bajás la vista a la fila de <i>Requeridos</i>, buscás el rojo, subís por esa columna y ves quién está y quién no a esa hora. Ahí decidís a quién mover.</p>
-    <p>En el mapa de cobertura, el número es <b>gente programada menos gente requerida</b>: en rojo falta, en amarillo estás justo, en azul sobra.</p>
+    <h4>Las dos grillas de abajo, en la vista semana</h4>
+    <p>Abajo del horario hay dos tablas con la misma forma —los días en filas, las horas en columnas— que se leen una después de la otra:</p>
+    ${_li([
+      '<b>Personas en caja por franja</b> — la cuenta de cabezas: cuánta gente tenés atendiendo en cada hora de cada día, según el horario que acabás de armar. Va sin colores a propósito: es un recuento, todavía no dice si alcanza.',
+      '<b>Cobertura por franja</b> — la misma tabla menos lo que el local necesita esa hora. Acá sí hay color: <b>rojo</b> falta gente, <b>amarillo</b> estás justo, <b>azul</b> sobra. Pasando el mouse por una celda te dice cuántos hay y cuántos hacen falta.',
+    ])}
+    <p>Primero mirás cuánta gente hay, después si esa cantidad alcanza. Es el mismo razonamiento de la vista día, pero para la semana entera de un vistazo.</p>
     <p>Si querés que te lo muestre en la pantalla tabla por tabla, usá el botón <b>👉 Horarios en pantalla</b> de acá arriba.</p>
     <h4>Falta de hoy</h4>
     <p>Elegís la persona y la fecha, y debajo te digo qué hace esa persona ese día: el turno que tenía, o que es su día libre, o que ya figura de vacaciones. Al marcar la falta, su turno se descuenta y todo se recalcula: el mapa de cobertura por franja, la vista día y los números de arriba.</p>
@@ -758,13 +780,13 @@ const MANUAL_SECS = [
 const TOUR = [
   {sel:'#localSel',    tab:'config', t:'Tu local. Queda fijo: cada gerente ve solamente el suyo.'},
   {sel:'#mesSel',      tab:'config', t:'El mes que estás armando. El horario toma semanas enteras de lunes a domingo, así que puede arrancar en el mes anterior.'},
-  {sel:'#idealConfig', tab:'config', t:'La dotación ideal para tu local y su costo. Cuando cargues tu equipo, acá mismo aparece el comparativo.'},
+  {sel:'#pisoFTBox',   tab:'config', t:'La pregunta más útil del día a día: con los full time que vas a tener, ¿alcanza o hace falta sumar part time? El campo viene cargado con los que tenés hoy. Si se te va alguien, bajá el número en uno y tocá Recalcular: armo la dotación, te la dejo cargada en Mi equipo y genero el horario de una.'},
+  {sel:'#idealConfig', tab:'config', t:'Los tres cubos que contestan todo. Tu equipo de hoy, de qué contrato es cada part time y cuánto cuesta por mes; abajo, resaltado, si te hacen falta part time o no. Al medio, las horas que tenés contratadas contra la demanda real del local. Y a la derecha, cuál sería el mix más barato para esa misma demanda.'},
   {sel:'#lsOpen',      tab:'config', t:'El horario de tu local. Si abre distinto a lo que dice acá, corregilo: toda la demanda se recalcula.'},
   {sel:'#gridFeriados',tab:'config', t:'Los feriados del mes vienen marcados. Si alguno se trasladó, desmarcalo y marcá el que va.'},
   {sel:'#selRotativo', tab:'config', t:'Turnos rotativos: los full time alternan mañana y tarde semana a semana, sin que cambien los turnos del local.'},
   {sel:'#nEquipo',     tab:'config', t:'Empezá acá: cuántas personas sos, y tocá Aplicar para habilitar las filas.'},
   {sel:'#tablaEquipo', tab:'config', t:'Una fila por persona: contrato, condición, el sector al que la querés fijar, estado con sus fechas de ausencia, la franja en la que puede trabajar, su día libre y si hace turno cortado.'},
-  {sel:'#selBaja',     tab:'config', t:'Simulá qué pasa si se va alguien. Podés ir sumando personas para ver desde dónde empiezan a hacer falta part time.'},
   {sel:'#ausentismo',  tab:'config', t:'No agrega gente: marca las franjas donde estás tan justo que una sola falta genera hueco.'},
   {sel:'#btnEvento',   tab:'config', t:'Los días con venta extra —día de pago, promociones— suben la demanda de esas horas.'},
   {sel:'#btnGenerar',  tab:'config', t:'Con el equipo cargado, tocá acá. Cada vez que cambies algo, volvé a tocarlo.'},
@@ -784,7 +806,8 @@ const TOUR_HOR = [
   {sel:'#hCards',     tab:'hor', vista:'sem',  t:'Los tres números de la semana que estás viendo: cuánta gente quedó programada, cuántas horas de demanda no llegás a cubrir (hueco) y cuántas horas de presencia te sobran por encima de la demanda.'},
   {sel:'#hAvisos',    tab:'hor', vista:'sem',  t:'Los avisos de la semana: en qué franjas falta gente, cuáles quedaron tan justas que una sola falta genera hueco, y si alguien no pudo recibir horario con su disponibilidad.', opt:true},
   {sel:'#hGrilla',    tab:'hor', vista:'sem',  t:'El horario, una fila por persona y una columna por fecha. En cada celda está el turno con su presencia total; abajo, en chico, las horas de trabajo y el descanso, y el sector si le toca uno. "Día Libre" es su franco y la ★ marca un feriado.'},
-  {sel:'#hCobertura', tab:'hor', vista:'sem',  t:'El mapa hora por hora: el número es la gente programada MENOS la requerida. Rojo, falta gente. Amarillo, estás justo. Azul, sobra. Es el lugar para ver de un vistazo si el mes cierra.'},
+  {sel:'#hDotacionHora', tab:'hor', vista:'sem',  t:'Primera grilla: cuántas personas tenés en caja en cada hora de cada día. Es la cuenta de cabezas del horario que acabás de armar, sin juicio todavía sobre si alcanza.'},
+  {sel:'#hCobertura', tab:'hor', vista:'sem',  t:'Segunda grilla: la misma de arriba, menos lo que el local necesita esa hora. Rojo, falta gente. Amarillo, estás justo. Azul, sobra. Es el lugar para ver de un vistazo si el mes cierra. Pasando el mouse por una celda te dice cuántos hay y cuántos hacen falta.'},
   {sel:'#hFalta',     tab:'hor', vista:'sem',  t:'Si hoy te faltó alguien, cargalo acá: elegís la persona y la fecha, y abajo te digo qué turno tenía ese día. Al marcarla, su turno se descuenta de la cobertura y te muestro qué franjas quedan descubiertas y quién del equipo podría cubrirlas.'},
   {sel:'#hVistaDia',  tab:'hor', vista:'dia',  t:'Ésta es la vista día, la más útil para ver cómo queda cubierto un día concreto. Elegí acá el día y abajo se dibuja la jornada completa, hora por hora.'},
   {sel:'#hDiaTabla',  tab:'hor', vista:'dia',  t:'Cada fila es una persona y cada columna una hora. La barra pintada va desde que entra hasta que sale: es su PRESENCIA, con el descanso incluido adentro — por eso una jornada de 8 h de trabajo pinta 9 h de barra. Verde es full time, azul part time, gris ese día no trabaja. Si la barra viene en dos pedazos, es un turno cortado.'},
@@ -1094,11 +1117,8 @@ function restaurarTrabajo(loc){
   if(!cfg){ if(av) av.style.display='none'; return; }
   try{
     aplicarCfg(cfg, false);
-    if(av){
-      av.style.display='';
-      av.innerHTML = `Retomaste donde lo habías dejado — última vez que tocaste algo: <b>${fechaLinda(cfg.guardado)}</b>. `
-        + `Se guarda solo en esta computadora. Si querés arrancar limpio, usá <b>🗑 Empezar de cero</b> arriba.`;
-    }
+    // el trabajo se restaura igual, pero sin cartel: era una línea más para leer
+    if(av){ av.style.display='none'; av.innerHTML=''; }
     if(cfg.generado && EQUIPO.length){
       const lc = DATA[document.getElementById('localSel').value];
       RESULTADO = asignarEquipo(lc); etiquetarTodo(lc);
@@ -1404,45 +1424,63 @@ function feriadosSemana(w){ const o=[]; FERIADOS[w].forEach((v,d)=>{ if(v) o.pus
 // Caja "Dotación ideal" de la pantalla de inicio. Se recalcula sola; el cálculo
 // completo mide ~60 ms, así que se puede correr en cada cambio con un debounce.
 let _idealCfg = null;
+// Escenario de piso de full time: null = mostrar el equipo real del local.
+let PISO_ESC = null;
+
+// ¿Con los full time que tiene el local hacen falta part time? Lo contesta el
+// mismo motor de la vista gerencial, pidiéndole el mix más barato que cubre la
+// demanda con ese piso de full time. Es el dato que cierra la discusión: se
+// muestra resaltado dentro de la primera tarjeta y no hay que leer nada más.
+function veredictoPT(req, d, nFT){
+  let pt;
+  try{
+    const pos = optimizarMixGerencial(req, d.opd, d.cld, nFT);
+    pt = pos.filter(q=>q.ct.tipo!=='FT');
+  }catch(err){ return ''; }
+  if(!pt.length) return `<div class="vok">Con ${nFT} full time <b>no necesitás part time</b>.</div>`;
+  const porCt = {}; for(const q of pt){ const n=q.contrato||q.nombre; porCt[n]=(porCt[n]||0)+1; }
+  const det = Object.keys(CONTRATOS).filter(k=>porCt[k]).map(k=>`${k} ×${porCt[k]}`).join(' · ');
+  return `<div class="vneed">Con ${nFT} full time necesitás <b>${pt.length} part time</b>: ${det}</div>`;
+}
+
 function renderIdealConfig(){
-  const el=document.getElementById('idealConfig'); if(!el) return;
-  const nomLocal=document.getElementById('localSel')?.value;
-  const local=DATA[nomLocal];
+  const el = document.getElementById('idealConfig'); if(!el) return;
+  const local = DATA[document.getElementById('localSel')?.value];
   if(!local){ el.innerHTML='<div class="small">Elegí un local.</div>'; return; }
 
-  let ideal, costoIdeal;
+  let d, ideal, costoIdeal;
   try{
-    const d = demandaTramo(local);
+    d = demandaTramo(local);
     ideal = optimizarIdeal(d.reqProm, d.opd, d.cld);
     costoIdeal = ideal.reduce((a,q)=>a+costoMensualPos(q.ct,q.asig),0);
   }catch(err){
-    el.innerHTML='<div class="small">No pude calcular el mix ideal de este local.</div>';
-    return;
+    el.innerHTML='<div class="small">No pude calcular el mix de este local.</div>'; return;
   }
   _idealCfg = ideal;
 
-  const nFT=ideal.filter(q=>q.ct.tipo==='FT').length, nPT=ideal.length-nFT;
-  // desglose por contrato, del más grande al más chico
-  const porCt={};
-  for(const q of ideal) porCt[q.contrato||q.nombre]=(porCt[q.contrato||q.nombre]||0)+1;
-  const desglose=Object.keys(CONTRATOS).filter(k=>porCt[k]).map(k=>`${k} ×${porCt[k]}`).join(' · ');
-  const hsIdeal = ideal.reduce((a,q)=>a+q.asig.reduce((x,y)=>x+y.len,0),0)/2;
+  const req  = d.reqProm.map(r=>r.map(v=>Math.round(v)));
+  const dem  = req.flat().reduce((a,x)=>a+x,0)/2;
+  const nIdealFT = ideal.filter(q=>q.ct.tipo==='FT').length;
+  const nIdealPT = ideal.length - nIdealFT;
+  const hsIdeal  = ideal.reduce((a,q)=>a+q.ct.horas,0);
+  const porCtId = {}; for(const q of ideal){ const n=q.contrato||q.nombre; porCtId[n]=(porCtId[n]||0)+1; }
+  const detalleIdeal = Object.keys(CONTRATOS).filter(k=>porCtId[k]).map(k=>`${k} ×${porCtId[k]}`).join(' · ');
 
-  let cards = `<div class="card" style="border-color:var(--accent)">
-      <div class="lbl">Dotación ideal para este local</div>
-      <div class="val">${nFT} FT + ${nPT} PT</div>
-      <div class="note">Costo ideal: <b>${fmtGsM(costoIdeal)}</b>/mes · ${fmtHM(hsIdeal)} por semana</div>
-    </div>`;
-
-  // comparativo, sólo si ya hay equipo cargado
-  let pie='';
   const hayEquipo = EQUIPO.length > 0;
-  if(hayEquipo){
-    let costoAct=null;
+  const nFTact = EQUIPO.filter(e=>CONTRATOS[e.contrato]?.tipo==='FT' && (e.estado||'Activo')!=='Baja').length;
+  const nPTact = EQUIPO.filter(e=>CONTRATOS[e.contrato]?.tipo==='PT' && (e.estado||'Activo')!=='Baja').length;
+
+  // ¿Mostramos el equipo real o un escenario? Si el piso coincide con los full
+  // time de hoy y el equipo no tiene part time, es el mismo caso: se muestra el
+  // equipo real, para que el "costo actual" sea siempre uno solo.
+  const esHoy = hayEquipo && (PISO_ESC === null || (PISO_ESC === nFTact && nPTact === 0));
+
+  let c1Titulo, c1Dot, c1Costo, c1Nota, hsElegido, faltaH = 0, franjas = '', costoElegido;
+  let c1Det = '', c1Ver = '';
+
+  if(esHoy){
+    let costoAct;
     try{
-      // se corre la asignación en silencio para que el costo actual lleve el
-      // recargo nocturno real, igual que el ideal. Si no, se compararían peras
-      // con manzanas y el ahorro saldría inflado.
       const res = asignarEquipo(local);
       costoAct = res.pos.reduce((a,p)=>a + costoMensualEmpleado(p.ct || CONTRATOS[p.contrato], p.asig), 0);
       if(ROTATIVO && res.posB){
@@ -1452,28 +1490,100 @@ function renderIdealConfig(){
     }catch(err){
       costoAct = EQUIPO.reduce((a,e)=>a+(CONTRATOS[e.contrato]?.costo||0),0);
     }
-    const nFTa=EQUIPO.filter(e=>CONTRATOS[e.contrato]?.tipo==='FT').length, nPTa=EQUIPO.length-nFTa;
-    const dif = costoAct - costoIdeal;
-    cards += `<div class="card">
-        <div class="lbl">Tu dotación actual</div>
-        <div class="val">${nFTa} FT + ${nPTa} PT</div>
-        <div class="note">Costo actual: <b>${fmtGsM(costoAct)}</b>/mes · con recargo nocturno</div>
-      </div>
-      <div class="card" style="border-color:${dif>=0?'var(--accent)':'var(--warn)'}">
-        <div class="lbl">Diferencia mensual</div>
-        <div class="val" style="color:${dif>=0?'var(--accent)':'var(--warn)'}">${dif>=0?'':'−'}${fmtGsM(Math.abs(dif))}</div>
-        <div class="note">${dif>=0?'lo que podrías ahorrar con el mix ideal':'el mix ideal sale más caro que tu equipo actual'}</div>
-      </div>`;
-    pie = `<div class="small" style="margin-top:10px">Los dos costos se calculan igual: sueldo del contrato más el recargo nocturno del 30% por las horas que caen entre 20:00 y 06:00. Tu costo actual sale del horario que el sistema le arma a tu equipo, así que es el mismo número que ves en la pestaña <b>Horarios</b>.</div>`;
+    costoElegido = costoAct;
+    hsElegido = EQUIPO.filter(e=>(e.estado||'Activo')!=='Baja')
+                      .reduce((a,e)=>a+(CONTRATOS[e.contrato]?.horas||0),0);
+    c1Titulo = 'Tu equipo hoy';
+    c1Dot    = `${nFTact} FT + ${nPTact} PT`;
+    c1Costo  = `<b>${fmtGsM(costoAct)}</b> / mes · costo actual`;
+    // de qué contrato es cada part time que tenés cargado
+    const porCtAct = {};
+    for(const e of EQUIPO){
+      const c = CONTRATOS[e.contrato];
+      if(c && c.tipo!=='FT' && (e.estado||'Activo')!=='Baja') porCtAct[e.contrato]=(porCtAct[e.contrato]||0)+1;
+    }
+    c1Det = Object.keys(CONTRATOS).filter(k=>porCtAct[k]).map(k=>`${k} ×${porCtAct[k]}`).join(' · ');
+    c1Ver = veredictoPT(req, d, nFTact);
   } else {
-    pie = `<div class="small" style="margin-top:10px">Cargá tu equipo en <b>Mi equipo</b> y acá abajo te aparece el comparativo de costos contra este mix.</div>`;
+    const piso = Math.max(0, Math.min(60, PISO_ESC ?? (hayEquipo ? nFTact : nIdealFT)));
+    let pos;
+    try{ pos = optimizarMixGerencial(req, d.opd, d.cld, piso); }
+    catch(err){ pos = []; }
+    const nFT = pos.filter(q=>q.ct.tipo==='FT').length;
+    const pt  = pos.filter(q=>q.ct.tipo!=='FT');
+    const porCt={}; for(const q of pt){ const n=q.contrato||q.nombre; porCt[n]=(porCt[n]||0)+1; }
+    const detPT = Object.keys(CONTRATOS).filter(k=>porCt[k]).map(k=>`${k} ×${porCt[k]}`).join(' · ');
+    costoElegido = pos.reduce((a,q)=>a+costoMensualPos(q.ct,q.asig),0);
+    hsElegido = pos.reduce((a,q)=>a+q.ct.horas,0);
+    c1Titulo = `Si tenés ${piso} full time`;
+    c1Dot    = `${nFT} FT + ${pt.length} PT`;
+    c1Costo  = `<b>${fmtGsM(costoElegido)}</b> / mes`;
+    c1Det    = detPT;
+    c1Ver    = pt.length===0
+      ? `<div class="vok">Con ${piso} full time <b>no necesitás part time</b>.</div>`
+      : `<div class="vneed">Con ${piso} full time necesitás <b>${pt.length} part time</b>: ${detPT}</div>`;
+    // cobertura del escenario
+    const cov = Array.from({length:7},()=>new Array(48).fill(0));
+    for(const q of pos) for(const a of q.asig)
+      for(let s=a.e; s<a.e+a.pres; s++) cov[a.d][((s%48)+48)%48]++;
+    const porHora = {};
+    for(let dd=0; dd<7; dd++) for(let s=0; s<48; s++){
+      const f = req[dd][s]-cov[dd][s];
+      if(f>0){ faltaH += f/2; const h=slotToHM(s-s%2); porHora[h]=(porHora[h]||0)+f; }
+    }
+    franjas = Object.keys(porHora).sort().slice(0,6).join(', ');
   }
 
-  el.innerHTML = `<div class="cards">${cards}</div>
-    <div class="small" style="margin-top:10px">${desglose}</div>
-    <div class="small" style="margin-top:4px">Es el mix que el sistema arma desde cero para la demanda de este local, dimensionado con <b>${nombreBase()}</b>. Se calcula con el mismo motor que la herramienta de Mix de Contratos, así que es el número oficial de la cadena para este local.</div>
-    ${pie}`;
+  const dif = costoElegido - costoIdeal;
+  const sobra = dem>0 ? (hsElegido-dem)/dem*100 : 0;
+
+  let cards = `<div class="cards">
+    <div class="card" style="border-color:var(--accent)">
+      <div class="lbl">${c1Titulo}</div>
+      <div class="val">${c1Dot}</div>
+      ${c1Det ? `<div class="note">${c1Det}</div>` : ''}
+      <div class="note">${c1Costo}</div>
+      ${c1Ver}
+    </div>
+    <div class="card">
+      <div class="lbl">Cobertura actual</div>
+      <div class="val">${fmtHM(hsElegido)} <span class="vs">versus ${fmtHM(dem)} de demanda real</span></div>
+    </div>
+    <div class="card" style="border-color:${dif>100000?'var(--gold)':'var(--line)'}">
+      <div class="lbl">Mix más barato para esta demanda</div>
+      <div class="val">${nIdealFT} FT + ${nIdealPT} PT</div>
+      <div class="note"><b>${fmtGsM(costoIdeal)}</b> / mes${Math.abs(dif)>=100000
+        ? ` · el equipo elegido cuesta <b style="color:${dif>0?'var(--gold)':'var(--accent)'}">${dif>0?'+':'−'}${fmtGsM(Math.abs(dif))}</b>`
+        : ' · igual que el equipo elegido'}</div>
+    </div>
+  </div>`;
+
+  let pie = '';
+  if(!hayEquipo){
+    pie += `<div class="small" style="margin-top:8px">Cargá tu equipo en <b>Mi equipo</b> y esta primera tarjeta pasa a mostrar tu dotación real y su costo.</div>`;
+  }
+  if(!esHoy && hayEquipo){
+    pie += `<div class="small" style="margin-top:8px"><a href="#" id="volverHoy">← Volver a mi equipo de hoy</a></div>`;
+  }
+  if(faltaH > 0.4){
+    pie += `<div class="box" style="margin-top:12px; border-color:var(--warn); background:var(--warn-soft)">
+      <b>Con esta dotación queda demanda sin cubrir.</b> Faltan ${fmtHM(faltaH)} por semana`
+      + (franjas ? `, sobre todo alrededor de las ${franjas}` : '')
+      + `. Conviene sumar gente en esas franjas o el servicio va a resentirse.</div>`;
+  }
+  if(_ultimoPiso !== null && esHoy){
+    pie += `<div class="okbanner" style="margin-top:10px">Listo: dejé <b>${nFTact} FT + ${nPTact} PT</b> cargados en <b>Mi equipo</b> y el horario ya está armado en la pestaña <b>Horarios</b>. Si querés ajustar condiciones, día libre o sector de alguien, hacelo en la tabla y volvé a tocar <b>Generar horario</b>.</div>`;
+  }
+  pie += `<div style="margin-top:10px; font-size:14px; line-height:1.55">
+      <b>¿Se te fue alguien?</b> Poné arriba cuántos full time te quedan y tocá <b>Recalcular</b>: armo la dotación que hace falta, te la dejo cargada en <b>Mi equipo</b> y genero el horario.</div>`;
+
+  el.innerHTML = cards + pie;
+  sincronizarPiso();   // el campo queda alineado con lo que se está mostrando
+
+  const v = document.getElementById('volverHoy');
+  if(v) v.addEventListener('click', ev=>{ ev.preventDefault(); PISO_ESC=null; sincronizarPiso(true); renderIdealConfig(); });
 }
+
 
 // se recalcula con debounce: el cálculo es corto, pero no hace falta correrlo en
 // cada tecla mientras alguien escribe un horario
@@ -2718,20 +2828,55 @@ function renderHorarios(){
   }
   html+=`</tbody></table></div>`;
 
-  // ---- mapa falta/sobra por hora ----
-  html+=`<h2>Cobertura por franja · ${rotuloSemLargo(w)}</h2><div class="small" style="margin-bottom:6px">Número = personas programadas menos requeridas. Rojo: falta gente · Amarillo: justo (frágil) · Azul: sobra.</div>`;
+  // ---- las dos grillas por hora: primero cuánta gente hay, después si alcanza ----
   const openG=Math.min(...opd), closeG=Math.max(...cld);
+
+  // Se recorre una sola vez y se guarda, para que las dos tablas hablen de lo
+  // mismo: de cada hora se toma la MEDIA HORA MÁS AJUSTADA (la de peor saldo),
+  // porque es la que manda para saber si el local aguanta.
+  const grilla = Array.from({length:7}, ()=>[]);
+  for(let d=0;d<7;d++){
+    for(let s=openG;s<closeG;s+=2){
+      if(s<opd[d]||s>=cld[d]){ grilla[d].push(null); continue; }
+      let dif=1e9, prog=0, rr=0;
+      for(const ss of [s,s+1]){
+        if(ss>=cld[d]) continue;
+        const v=cov[d][ss]-req[d][ss];
+        if(v<dif){ dif=v; prog=cov[d][ss]; rr=req[d][ss]; }
+      }
+      grilla[d].push(dif===1e9 ? null : {dif, prog, req:rr});
+    }
+  }
+
+  // 1) cuánta gente hay en caja en cada hora
+  html+=`<h2>Personas en caja por franja · ${rotuloSemLargo(w)}</h2>
+  <div class="small" style="margin-bottom:6px">Cuántas personas tenés atendiendo en cada hora según este horario. Todavía no dice si alcanza o no: es simplemente la cuenta de cabezas. Debajo está la misma grilla comparada contra lo que el local necesita.</div>`;
+  html+=`<div class="tablewrap" id="hDotacionHora"><table><thead><tr><th></th>`;
+  for(let s=openG;s<closeG;s+=2) html+=`<th class="heat">${Math.floor(s/2)}</th>`;
+  html+=`</tr></thead><tbody>`;
+  for(let d=0;d<7;d++){
+    html+=`<tr><td class="posname">${DIAS[d]}</td>`;
+    for(let k=0;k<grilla[d].length;k++){
+      const c=grilla[d][k];
+      html+=`<td class="heat"${c?' style="font-weight:600"':''}>${c?c.prog:''}</td>`;
+    }
+    html+=`</tr>`;
+  }
+  html+=`</tbody></table></div>`;
+
+  // 2) si esa gente alcanza para la demanda de esa hora
+  html+=`<h2 style="margin-top:18px">Cobertura por franja · ${rotuloSemLargo(w)}</h2>
+  <div class="small" style="margin-bottom:6px">La misma grilla de arriba, menos lo que el local necesita en cada hora. Número = personas programadas menos requeridas. Rojo: falta gente · Amarillo: justo (frágil) · Azul: sobra.</div>`;
   html+=`<div class="tablewrap" id="hCobertura"><table><thead><tr><th></th>`;
   for(let s=openG;s<closeG;s+=2) html+=`<th class="heat">${Math.floor(s/2)}</th>`;
   html+=`</tr></thead><tbody>`;
   for(let d=0;d<7;d++){
     html+=`<tr><td class="posname">${DIAS[d]}</td>`;
-    for(let s=openG;s<closeG;s+=2){
-      if(s<opd[d]||s>=cld[d]){html+=`<td class="heat"></td>`;continue;}
-      let dif=1e9, rr=0;
-      for(const ss of [s,s+1]){ if(ss>=cld[d])continue; const v=cov[d][ss]-req[d][ss]; if(v<dif){dif=v;rr=req[d][ss];} }
-      const cls=dif<0?'h-falta':(dif===0&&rr>0?'h-justo':(dif>0?'h-sobra':'h-ok'));
-      html+=`<td class="heat ${cls}">${dif>0?'+':''}${dif===1e9?'':dif}</td>`;
+    for(let k=0;k<grilla[d].length;k++){
+      const c=grilla[d][k];
+      if(!c){ html+=`<td class="heat"></td>`; continue; }
+      const cls=c.dif<0?'h-falta':(c.dif===0&&c.req>0?'h-justo':(c.dif>0?'h-sobra':'h-ok'));
+      html+=`<td class="heat ${cls}" title="${c.prog} programados · ${c.req} requeridos">${c.dif>0?'+':''}${c.dif}</td>`;
     }
     html+=`</tr>`;
   }
@@ -3102,18 +3247,8 @@ function renderEquipo(){
     </select></td>
     <td style="text-align:center"><input type="checkbox" data-eq="${i}" data-f="cortado" ${e.cortado?'checked':''} ${CONTRATOS[e.contrato].tipo==='PT'?'disabled':''}></td>
   </tr>`).join('');
-  // desplegable de "si se va alguien": los que ya están de baja no se ofrecen
-  const sb=document.getElementById('selBaja');
-  if(sb){
-    const previo=sb.value;
-    const opts=EQUIPO.map((e,i)=>({e,i})).filter(x=>(x.e.estado||'Activo')!=='Baja' && !SIM_BAJAS.includes(x.i));
-    sb.innerHTML = opts.length
-      ? opts.map(x=>`<option value="${x.i}">${x.e.nombre||('Empleado '+(x.i+1))} · ${x.e.contrato}</option>`).join('')
-      : '<option value="">— sin gente para simular —</option>';
-    if(opts.some(x=>String(x.i)===previo)) sb.value=previo;
-    const bb=document.getElementById('btnBaja');
-    if(bb) bb.disabled = !opts.length;
-  }
+  // el piso de full time se mantiene al día con el equipo cargado
+  sincronizarPiso();
   tb.querySelectorAll('[data-eq]').forEach(el=>{
     el.addEventListener('change',()=>{
       const i=+el.dataset.eq, f=el.dataset.f, e=EQUIPO[i];
@@ -3173,139 +3308,98 @@ function renderEquipo(){
     });
   });
 }
-// ---------- simulación de bajas (acumulativa) ----------
-// Se van sumando personas y el cálculo se rehace con TODAS afuera, así se ve en
-// qué baja el equipo deja de cubrir el 100% de la demanda.
-let SIM_BAJAS = [];
-function simularBaja(i){ if(!SIM_BAJAS.includes(i)) SIM_BAJAS.push(i); simularBajas(); }
-function quitarSimBaja(i){ SIM_BAJAS = SIM_BAJAS.filter(x=>x!==i); simularBajas(); }
-function limpiarSimBajas(){ SIM_BAJAS = []; simularBajas(); }
-function resetSimBajas(){ SIM_BAJAS = []; const c=document.getElementById('chipsBaja'); if(c) c.innerHTML=''; const b=document.getElementById('respBaja'); if(b) b.textContent=''; }
+// ---------- piso de full time ----------
+// Responde la pregunta real del gerente: con los full time que voy a tener,
+// ¿me alcanza o me falta gente? El cálculo lo hace el mismo motor de la vista
+// gerencial (optimizarMixGerencial), pasándole el piso como mínimo de FT.
 function nombreEmp(i){ const e=EQUIPO[i]; return (e && e.nombre) ? e.nombre : ('Empleado '+(i+1)); }
 
-function renderChipsBaja(){
-  const c = document.getElementById('chipsBaja'); if(!c) return;
-  if(!SIM_BAJAS.length){ c.innerHTML=''; return; }
-  c.innerHTML = '<b>Se van:</b> ' + SIM_BAJAS.map(i=>
-      `<span class="chip">${nombreEmp(i)} · ${EQUIPO[i]?EQUIPO[i].contrato:''} <button type="button" data-quita="${i}" title="Sacar a ${nombreEmp(i)} de la simulación" style="border:0; background:none; padding:0 0 0 4px; cursor:pointer; color:var(--warn); font-weight:700; font-family:inherit; font-size:inherit">✕</button></span>`
-    ).join(' ')
-    + ` <button class="btn mini" id="btnLimpiaBajas" style="margin-left:6px">Limpiar</button>`;
-  c.querySelectorAll('[data-quita]').forEach(a=>a.addEventListener('click', ev=>{
-    ev.preventDefault(); ev.stopPropagation();
-    quitarSimBaja(+a.getAttribute('data-quita'));
-  }));
-  const lb = document.getElementById('btnLimpiaBajas');
-  if(lb) lb.addEventListener('click', limpiarSimBajas);
+// Full time activos del equipo cargado hoy.
+function ftActuales(){
+  return EQUIPO.filter(e => CONTRATOS[e.contrato] && CONTRATOS[e.contrato].tipo==='FT'
+                            && (e.estado||'Activo')!=='Baja').length;
 }
 
-function simularBajas(){
-  const box = document.getElementById('respBaja');
-  renderChipsBaja();
-  renderEquipo();          // el desplegable no ofrece a los que ya están en la lista
-  if(!SIM_BAJAS.length){ box.textContent = ''; return; }
-  if(!RESULTADO){ box.textContent = 'Primero tocá "Generar horario" en la pestaña Horarios — necesito tu horario actual para calcular el impacto.'; return; }
-
+// El campo arranca con los full time que el local tiene hoy. Si el gerente lo
+// tocó, se respeta lo que puso hasta que cambie de local o rearme el equipo.
+let _pisoTocado = false;
+function sincronizarPiso(forzar){
+  const inp = document.getElementById('pisoFT'); if(!inp) return;
+  if(forzar || !_pisoTocado || inp.value===''){
+    inp.value = EQUIPO.length ? ftActuales() : (_idealCfg ? _idealCfg.filter(q=>q.ct.tipo==='FT').length : 0);
+    if(forzar) _pisoTocado = false;
+  }
+}
+function resetSimBajas(){
+  PISO_ESC = null; _pisoTocado = false; _ultimoPiso = null;
+  sincronizarPiso(true);
+}
+// Reescribe Mi equipo con los contratos de un escenario, sin perder a la gente:
+// cada puesto va primero a alguien que ya tenga ese contrato, después a quien
+// quede libre (se le cambia sólo el contrato) y recién ahí se agregan filas
+// nuevas. Si sobra gente, se sacan primero las filas sin nombre.
+function aplicarDotacion(contratos){
   const local = DATA[document.getElementById('localSel').value];
-  const {opd, cld, reqProm} = RESULTADO;
-  const lista = SIM_BAJAS.map(i=>`${nombreEmp(i)} (${EQUIPO[i].contrato})`).join(', ');
-  const varias = SIM_BAJAS.length > 1;
+  const o = local.is24 ? 0 : Math.round(local.open*2);
+  const cl = local.is24 ? 48 : Math.round(local.close*2);
+  const libres = EQUIPO.slice();
+  const nuevo = [];
 
-  let costoPersonas = 0;
-  for(const i of SIM_BAJAS){
-    const pp = RESULTADO.pos ? RESULTADO.pos.find(x=>x.emp===i) : null;
-    costoPersonas += costoMensualEmpleado(CONTRATOS[EQUIPO[i].contrato], pp ? pp.asig : []);
-  }
-
-  // 1) simular: esas personas pasan a "Baja" temporalmente y se rearma el resto
-  const estados = SIM_BAJAS.map(i=>EQUIPO[i].estado);
-  for(const i of SIM_BAJAS) EQUIPO[i].estado = 'Baja (simulación)';
-  const R2 = asignarEquipo(local);
-  SIM_BAJAS.forEach((i,k)=>{ EQUIPO[i].estado = estados[k]; });   // restaurar
-
-  // 2) cobertura del equipo restante contra la demanda de la semana tipo
-  const cov2 = Array.from({length:7}, ()=> new Array(48).fill(0));
-  for(const p of R2.pos) for(const a of p.asig) for(let s=a.e; s<a.e+a.pres; s++){ const [dd,ss]=diaSlot(a.d,s); cov2[dd][ss]++; }
-  const gap = Array.from({length:7}, ()=> new Array(48).fill(0));
-  let gapH = 0;
-  for(let d=0; d<7; d++) for(let s=opd[d]; s<cld[d]; s++){
-    const falta = Math.max(0, Math.round(reqProm[d][s]) - cov2[d][s]);
-    if(falta>0){ gap[d][s] = falta; gapH += falta/2; }
-  }
-
-  // hueco de base: el que ya existe HOY con el equipo completo
-  const cov0 = Array.from({length:7}, ()=> new Array(48).fill(0));
-  for(const p of RESULTADO.pos) for(const a of p.asig) for(let s=a.e; s<a.e+a.pres; s++){ const [dd,ss]=diaSlot(a.d,s); cov0[dd][ss]++; }
-  let gap0H = 0;
-  for(let d=0; d<7; d++) for(let s=opd[d]; s<cld[d]; s++) gap0H += Math.max(0, Math.round(reqProm[d][s]) - cov0[d][s]) / 2;
-  const avisoBase = gap0H >= 0.5 ? `\n⚠ Ojo: tu equipo YA tenía un hueco de ${fmtHM(gap0H)} por semana con el equipo completo — ese problema es previo y no se debe a ${varias?'estas bajas':'esta baja'}.\n` : '';
-
-  // el hueco que abren ESTAS bajas: lo que el resto no llega a tapar
-  const gapNuevo = Array.from({length:7}, ()=> new Array(48).fill(0));
-  let gapNuevoH = 0;
-  for(let d=0; d<7; d++) for(let s=opd[d]; s<cld[d]; s++){
-    const req = Math.round(reqProm[d][s]);
-    const dif = Math.max(0, req - cov2[d][s]) - Math.max(0, req - cov0[d][s]);
-    if(dif>0){ gapNuevo[d][s] = dif; gapNuevoH += dif/2; }
-  }
-
-  const costoRestante = costoEquipoActual() - costoPersonas;
-  const encabezado = varias
-    ? `Se van ${SIM_BAJAS.length} personas: ${lista}.`
-    : `${lista} sale.`;
-
-  if(gapNuevoH < 0.5){
-    box.textContent = `${avisoBase}${encabezado}
-El resto del equipo se reacomoda y cubre lo mismo que hoy: ${varias?'estas bajas':'esta baja'} no abre ningún hueco nuevo.
-Costo salarial mensual si no reponés: ${fmtGsM(costoRestante)} (hoy ${fmtGsM(costoEquipoActual())} · se ahorra ${fmtGsM(costoPersonas)}).
-Agregá otra baja para ver desde qué punto empiezan a hacer falta part time.`;
-    return;
-  }
-
-  // 3) en qué franjas queda descubierto
-  const franjas=[];
-  for(let d=0; d<7; d++){
-    let ini=null;
-    for(let s=opd[d]; s<=cld[d]; s++){
-      const hay = (s < cld[d]) && gap[d][s] > 0;
-      if(hay && ini===null) ini = s;
-      else if(!hay && ini!==null){ franjas.push(`${DIAS[d]} ${slotToHM(ini)}–${slotToHM(s)}`); ini=null; }
+  for(const ct of contratos){
+    let k = libres.findIndex(e => e.contrato === ct);            // mismo contrato
+    if(k < 0) k = libres.findIndex(e => (e.nombre||'').trim());  // alguien con nombre
+    if(k < 0) k = 0;                                             // cualquiera
+    if(libres.length){
+      const e = libres.splice(k,1)[0];
+      e.contrato = ct;
+      nuevo.push(e);
+    } else {
+      nuevo.push({nombre:'', contrato:ct, cond:'Normal', estado:'Activo',
+                  desde:o, hasta:cl, diaLibre:null, dias:[1,1,1,1,1,1,1], cortado:false});
     }
   }
-  const listaF = franjas.length
-    ? (franjas.length>12 ? franjas.slice(0,12).join(' · ')+` · … (${franjas.length-12} más)` : franjas.join(' · '))
-    : '—';
-
-  // 4) con qué reponer: el mix más barato que tapa el hueco que abren estas bajas
-  let bloqueSug = '';
-  const sug = optimizarIdeal(gapNuevo, opd, cld);
-  if(sug.length){
-    const costoSug = sug.reduce((a,p)=>a+(p.asig?costoMensualPos(p.ct,p.asig):p.ct.costo), 0);
-    const cuenta = {};
-    for(const p of sug) cuenta[p.nombre] = (cuenta[p.nombre]||0)+1;
-    const resumen = Object.keys(cuenta).map(k=>`${cuenta[k]} × ${k}`).join(' + ');
-    const detalle = sug.map(p=>{
-      const dias = [...new Set(p.asig.map(a=>a.d))].sort((a,b)=>a-b).map(d=>DIAS[d]).join(', ');
-      const entrada = p.ct.tipo==='FT' ? 'rotativa' : slotToHM(p.asig[0].e);
-      return `   · ${p.nombre} · entrada ${entrada} · ${dias}`;
-    }).join('\n');
-    const hsContrato = sug.reduce((a,p)=>a+(p.ct.horas||0), 0);
-    const nota = hsContrato > 3*gapNuevoH
-      ? `\nOjo: el hueco está partido en varios días y franjas, por eso hacen falta ${sug.length} ${sug.length===1?'persona':'personas'} aunque sumen ${fmtHM(gapNuevoH)} de hueco.`
-      : '';
-    const costoCon = costoRestante + costoSug;
-    const dif = costoCon - costoEquipoActual();
-    bloqueSug = `
-Para tapar ese hueco te alcanza con: ${resumen}
-${detalle}
-Costo salarial mensual si reponés así: ${fmtGsM(costoCon)} (${dif>=0?'+':'−'}${fmtGsM(Math.abs(dif))} contra los ${fmtGsM(costoEquipoActual())} de hoy).
-No hace falta reponer 1 a 1 con el mismo contrato que se fue.${nota}`;
-  }
-
-  box.textContent = `${avisoBase}${encabezado}
-Queda un hueco de ${fmtHM(gapH)} por semana que el resto del equipo no cubre${gapNuevoH < gapH-0.4 ? `, de los cuales ${fmtHM(gapNuevoH)} los abre${varias?'n estas bajas':' esta baja'}` : ''}.
-Franjas que quedan descubiertas: ${listaF}${bloqueSug}
-Costo salarial mensual si no reponés: ${fmtGsM(costoRestante)} (hoy ${fmtGsM(costoEquipoActual())} · se ahorra ${fmtGsM(costoPersonas)}).`;
+  EQUIPO.length = 0;
+  for(const e of nuevo) EQUIPO.push(e);
+  for(const e of EQUIPO) normalizarEmpleado(e);
+  const n = document.getElementById('nEquipo');
+  if(n) n.value = EQUIPO.length;
 }
+
+// Recalcular: arma la dotación para ese piso, la deja cargada en Mi equipo y
+// regenera el horario. Un solo paso.
+function calcularPiso(){
+  const inp = document.getElementById('pisoFT'); if(!inp) return;
+  const piso = Math.max(0, Math.min(60, +inp.value||0));
+  inp.value = piso; _pisoTocado = true;
+
+  const local = DATA[document.getElementById('localSel').value];
+  if(!local) return;
+  let pos;
+  try{
+    const d = demandaTramo(local);
+    const req = d.reqProm.map(r=>r.map(v=>Math.round(v)));
+    pos = optimizarMixGerencial(req, d.opd, d.cld, piso);
+  }catch(err){ return; }
+  if(!pos.length && piso===0) return;
+
+  // FT primero, después los part time del más grande al más chico
+  const contratos = pos.map(q => q.contrato || q.nombre)
+    .sort((a,b) => (CONTRATOS[b]?.horas||0) - (CONTRATOS[a]?.horas||0));
+
+  aplicarDotacion(contratos);
+  PISO_ESC = null;          // lo que se muestra ya es el equipo real
+  _ultimoPiso = piso;
+  renderEquipo();
+  renderIdealConfig();
+  _generarSinSaltar = true; // el gerente se queda en Configuración para seguir probando
+  generar();
+  autoguardar();
+}
+let _ultimoPiso = null;
+let _generarSinSaltar = false;
+
+
+
 function aplicarEquipo(){
   const n=Math.max(1,Math.min(60,+document.getElementById('nEquipo').value||1));
   const local=DATA[document.getElementById('localSel').value];
@@ -3501,12 +3595,13 @@ function generar(){
     etiquetarTodo(local);
     IDEAL_POS = null; escenario = 'actual';
     btn.disabled=false; btn.textContent='Generar horario →';
-    setTab('hor');
+    const saltar = !_generarSinSaltar; _generarSinSaltar = false;
+    if(saltar) setTab('hor');
     renderRotNota();
     renderHorarios();
     autoguardar();
     // la primera vez que se genera el horario, arranca el recorrido de esta pestaña
-    if(LOCAL_ABIERTO && !tourVisto2(LOCAL_ABIERTO) && !tourAbierto()){
+    if(saltar && LOCAL_ABIERTO && !tourVisto2(LOCAL_ABIERTO) && !tourAbierto()){
       setTimeout(()=>{ if(!tourVisto2(LOCAL_ABIERTO) && !tourAbierto()) tourIniciar(TOUR_HOR, LS_TOUR2); }, 700);
     }
   },30);
@@ -3526,10 +3621,16 @@ Object.keys(DATA).sort((a,b)=>a.localeCompare(b)).forEach(l=>{
 
 // lista de la pantalla de acceso: los locales que tienen credencial y datos
 const acSel=document.getElementById('acLocal');
-Object.keys(DATA).filter(l=>CRED[l]).sort((a,b)=>a.localeCompare(b)).forEach(l=>{
-  const o=document.createElement('option'); o.value=l; o.textContent=l; acSel.appendChild(o);
-});
-{ const o=document.createElement('option'); o.value='__ADMIN__'; o.textContent='Administración'; acSel.appendChild(o); }
+// Administración va primero: al final de 92 locales nadie la encontraba.
+{ const o=document.createElement('option'); o.value='__ADMIN__';
+  o.textContent='Administración · todos los locales'; acSel.appendChild(o); }
+{ const g=document.createElement('optgroup'); g.label='Locales';
+  Object.keys(DATA).filter(l=>CRED[l]).sort((a,b)=>a.localeCompare(b)).forEach(l=>{
+    const o=document.createElement('option'); o.value=l; o.textContent=l; g.appendChild(o);
+  });
+  acSel.appendChild(g); }
+// arranca en blanco para que nadie entre sin elegir su local
+acSel.selectedIndex = 0;
 document.getElementById('acBtn').addEventListener('click', entrar);
 document.getElementById('acClave').addEventListener('keydown', e=>{ if(e.key==='Enter') entrar(); });
 document.getElementById('btnSalir').addEventListener('click', salir);
@@ -3542,11 +3643,8 @@ document.getElementById('cvCancel').addEventListener('click', ()=>{ document.get
 document.getElementById('cvBtn').addEventListener('click', guardarClave);
 sel.addEventListener('change',()=>{ cargarHorarios(DATA[sel.value]); RESULTADO=null; IDEAL_POS=null; FALTAS=[]; resetSimBajas(); renderHorarios(); refrescarIdeal(); });
 document.getElementById('btnEquipo').addEventListener('click',aplicarEquipo);
-document.getElementById('btnBaja').addEventListener('click',()=>{
-  const v=document.getElementById('selBaja').value;
-  if(v==='') { document.getElementById('respBaja').textContent='Cargá tu equipo primero.'; return; }
-  simularBaja(+v);
-});
+document.getElementById('btnPiso').addEventListener('click', calcularPiso);
+document.getElementById('pisoFT').addEventListener('keydown', ev=>{ if(ev.key==='Enter') calcularPiso(); });
 document.getElementById('btnEvento').addEventListener('click',agregarEvento);
 document.getElementById('btnGenerar').addEventListener('click',generar);
 document.getElementById('gridFeriados').addEventListener('change', e=>{

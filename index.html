@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Horario del Local · Dotación Actual · v6.52</title>
+<title>Horario del Local · Dotación Actual · v6.53</title>
 <style>
   :root{
     /* La herramienta es de tema claro. Sin esto, un navegador en modo oscuro dibuja
@@ -842,7 +842,27 @@ const MANUAL_SECS = [
     <p>Volvé a tocar <b>Generar horario</b>. Los cambios de equipo, feriados y eventos se aplican recién ahí.</p>
     <h4>¿Alguien más ve lo que cargo?</h4>
     <p>No. Lo que cargás queda en tu computadora.</p>` },
+
+  // Sólo se muestra con el acceso de Administración: el comparador no existe
+  // para un gerente de local, y contarle que hay un ranking entre locales abre
+  // una discusión que no aporta a su trabajo.
+  { id:'comparador', t:'Comparar locales (Administración)', admin:true, h:()=>`
+    <p>En la pestaña <b>Horarios</b>, vista <b>Productividad</b>, el botón <b>📊 Comparar locales</b> abre el ranking de los ${Object.keys(DATA).length} locales por tickets del mes. Es exclusivo de Administración: un gerente de local no lo ve.</p>
+    <p>Está para contestar la pregunta que aparece en toda reunión con regionales: <i>"¿por qué a este local le ponés menos gente que a aquel, si tienen tickets parecidos?"</i>. La respuesta casi nunca está en los tickets — está en cuántas horas abre el local, en la forma de su curva y en cuántos sectores tiene que cubrir.</p>
+    <h4>Cómo se usa</h4>
+    <p>Marcás entre dos y cuatro locales y arriba aparece el veredicto en una línea, más cinco cuadros que se leen de izquierda a derecha como una cadena de causas: <b>volumen</b> (cuánto venden), <b>apertura</b> (cuántas horas abren), <b>demanda</b> (cuántas horas de caja piden), <b>carga</b> (tickets por hora-caja) y <b>dotación</b> (cuántos puestos les corresponde). Con cinco o más locales los cuadros no se arman y queda sólo la tabla.</p>
+    <h4>La columna que hay que mirar</h4>
+    <p><b>Tickets por hora-caja</b> es la carga real de trabajo: los tickets de una semana divididos por las horas contratadas del mix ideal. Es lo único comparable entre locales, porque normaliza las horas de apertura. El total de tickets del mes no sirve para eso.</p>
+    <h4>Dos cosas que conviene tener claras</h4>
+    ${_li([
+      'El ranking se calcula <b>siempre con los seis contratos</b>, aunque en la pantalla anterior hayas destildado alguno. Esa restricción es de un local, no de los otros 91, y si se aplicara a todos la comparación dejaría de ser pareja.',
+      'También se calcula sobre la <b>demanda base</b> de cada local, sin feriados ni eventos cargados, y sin selfcheckout. Las filas con ◔ son los locales que tienen autoservicio: pasando el mouse ves el total con esas cajas incluidas.',
+    ])}
+    <p class="mnota">Si al descontar el selfcheckout cambia quién vende más, aparece un aviso que lo dice. Esa diferencia no es trabajo de cajero: son compras que el cliente se cobró solo.</p>` },
 ];
+
+// Las secciones marcadas `admin` sólo existen para Administración.
+function manualSecs(){ return MANUAL_SECS.filter(s => !s.admin || ES_ADMIN); }
 
 // ── El recorrido guiado ──────────────────────────────────────────────────────
 // Cada paso apunta a un control real. Los que sólo existen después de generar el
@@ -897,14 +917,14 @@ let TOUR_PREF = null;     // con qué clave se recuerda que ya lo vio
 function abrirManual(sec){
   const c = document.getElementById('capaManual');
   const idx = document.getElementById('manIndice');
-  idx.innerHTML = MANUAL_SECS.map((s,i)=>`<button type="button" class="mitem" data-sec="${i}">${i+1}. ${s.t}</button>`).join('');
+  idx.innerHTML = manualSecs().map((s,i)=>`<button type="button" class="mitem" data-sec="${i}">${i+1}. ${s.t}</button>`).join('');
   idx.querySelectorAll('[data-sec]').forEach(b=>b.addEventListener('click', ()=>irSec(+b.dataset.sec)));
   c.style.display = 'flex';
   irSec(sec || 0);
 }
 function cerrarManual(){ document.getElementById('capaManual').style.display='none'; }
 function irSec(i){
-  const s = MANUAL_SECS[i]; if(!s) return;
+  const s = manualSecs()[i]; if(!s) return;
   document.querySelectorAll('#manIndice .mitem').forEach((b,k)=>b.classList.toggle('act', k===i));
   const cont = document.getElementById('manCuerpo');
   let cuerpo;

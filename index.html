@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Horario del Local · Dotación Actual · v6.53</title>
+<title>Horario del Local · Dotación Actual · v6.55</title>
 <style>
   :root{
     /* La herramienta es de tema claro. Sin esto, un navegador en modo oscuro dibuja
@@ -353,8 +353,9 @@
       <h3 style="margin:0">Dotación de tu local</h3>
       <div class="rowflex" style="gap:9px; align-items:center; background:var(--accent-soft);
                   border:1px solid var(--accent); border-radius:10px; padding:7px 12px">
-        <label for="pisoFT" style="margin:0; font-weight:700; color:var(--accent)">Introducí tu equipo full time:</label>
-        <input type="number" id="pisoFT" min="0" max="60" style="width:72px; font-weight:700; font-size:16px; text-align:center">
+        <label for="pisoFT" style="margin:0; font-weight:700; color:var(--accent)">¿Cuántos full time tenés hoy?</label>
+        <input type="number" id="pisoFT" min="0" max="60" placeholder="?" title="Cuántos full time tenés hoy en cajas"
+               style="width:72px; font-weight:700; font-size:16px; text-align:center">
         <button class="btn mini" id="btnPiso" style="background:var(--accent); color:#fff; border-color:var(--accent); font-weight:700">Recalcular</button>
       </div>
     </div>
@@ -764,7 +765,7 @@ const MANUAL_SECS = [
 
   { id:'bajas', t:'Si se va alguien: el piso de full time', h:()=>`
     <p>Es la pregunta del día a día: <b>con los full time que voy a tener, ¿me alcanza o me falta gente?</b></p>
-    <p>El campo <b>Introducí tu equipo full time</b> viene cargado con los que tenés hoy. Si se te va alguien, bajá el número en uno y tocá <b>Recalcular</b>. La herramienta arma la dotación más barata que cubre tu demanda respetando ese número, <b>la deja cargada en Mi equipo y genera el horario</b>, todo de una. Y te dice:</p>
+    <p>El campo <b>¿Cuántos full time tenés hoy?</b> <b>arranca vacío</b> la primera vez: ponés cuántos cajeros full time tenés hoy en cajas y tocás <b>Recalcular</b>. De ahí en adelante el campo sigue solo a tu equipo cargado. Si se te va alguien, bajá el número en uno y tocá <b>Recalcular</b>. La herramienta arma la dotación más barata que cubre tu demanda respetando ese número, <b>la deja cargada en Mi equipo y genera el horario</b>, todo de una. Y te dice:</p>
     ${_li([
       'en el primer cubo, resaltado: si con esos full time alcanza, o cuántos part time hay que sumar y de cuántas horas cada uno',
       'cuántas horas quedan contratadas frente a las que el local realmente necesita',
@@ -823,11 +824,13 @@ const MANUAL_SECS = [
   { id:'guardado', t:'Tu trabajo se guarda solo', h:()=>`
     <p>Todo lo que cargás se guarda solo <b>en esta computadora</b>, separado por local. Cerrás, volvés mañana, entrás y está todo como lo dejaste — incluso el horario ya generado.</p>
     ${_li([
-      '<b>💾 Guardar</b> — baja un archivo con todo lo que cargaste. Sirve para llevarlo a otra computadora o para mandárselo a alguien.',
-      '<b>📂 Cargar</b> — sube ese archivo y deja la pantalla como estaba.',
-      '<b>🗑 Empezar de cero</b> — borra lo guardado de este local en esta computadora y arranca limpio.',
+      ...(ES_ADMIN ? [
+        '<b>💾 Guardar</b> — baja un archivo con todo lo que cargaste. Sirve para llevarlo a otra computadora o para mandárselo a alguien.',
+        '<b>📂 Cargar</b> — sube ese archivo y deja la pantalla como estaba.',
+      ] : []),
+      '<b>🗑 Empezar de cero</b> — borra lo guardado de este local en esta computadora y arranca limpio. Te pide confirmación antes.',
     ])}
-    <p class="mnota">Como se guarda en el navegador, si entrás desde otra máquina o se limpia el navegador vas a arrancar limpio. Para eso está el archivo de Guardar.</p>` },
+    <p class="mnota">Como se guarda en el navegador, si entrás desde otra computadora o se limpia el navegador, vas a arrancar limpio y tenés que volver a cargar tu equipo.</p>` },
 
   { id:'faq', t:'Preguntas frecuentes', h:()=>`
     <h4>¿Por qué a alguien le figura "SIN HORARIO"?</h4>
@@ -870,7 +873,7 @@ function manualSecs(){ return MANUAL_SECS.filter(s => !s.admin || ES_ADMIN); }
 const TOUR = [
   {sel:'#localSel',    tab:'config', t:'Tu local. Queda fijo: cada gerente ve solamente el suyo.'},
   {sel:'#mesSel',      tab:'config', t:'El mes que estás armando. El horario toma semanas enteras de lunes a domingo, así que puede arrancar en el mes anterior.'},
-  {sel:'#pisoFTBox',   tab:'config', t:'La pregunta más útil del día a día: con los full time que vas a tener, ¿alcanza o hace falta sumar part time? El campo viene cargado con los que tenés hoy. Si se te va alguien, bajá el número en uno y tocá Recalcular: armo la dotación, te la dejo cargada en Mi equipo y genero el horario de una.'},
+  {sel:'#pisoFTBox',   tab:'config', t:'Empezá por acá: poné cuántos full time tenés hoy en cajas y tocá Recalcular. Te armo la dotación que hace falta, te la dejo cargada en Mi equipo y genero el horario de una. Después, si se te va alguien, bajás el número en uno y volvés a tocar Recalcular para ver si hay que reponer.'},
   {sel:'#idealConfig', tab:'config', t:'Los tres cubos que contestan todo. Tu equipo de hoy, de qué contrato es cada part time y cuánto cuesta por mes; abajo, resaltado, si te hacen falta part time o no. Al medio, las horas que tenés contratadas contra la demanda real del local. Y a la derecha, cuál sería el mix más barato para esa misma demanda.'},
   {sel:'#lsOpen',      tab:'config', t:'El horario de tu local. Si abre distinto a lo que dice acá, corregilo: toda la demanda se recalcula.'},
   {sel:'#gridFeriados',tab:'config', t:'Los feriados del mes vienen marcados. Si alguno se trasladó, desmarcalo y marcá el que va.'},
@@ -883,7 +886,7 @@ const TOUR = [
   {sel:'#btnGenerar',  tab:'config', t:'Con el equipo cargado, tocá acá. Cada vez que cambies algo, volvé a tocarlo.'},
   {sel:'#tabHor',      tab:'config', t:'El horario armado aparece en esta pestaña: por semana, por día y con el mapa de cobertura.'},
   {sel:'#resHor',      tab:'hor',    t:'Acá está el horario: elegís la semana arriba, cambiás de vista, y desde el mismo lugar bajás el Excel del mes.', opt:true},
-  {sel:'#btnCero',     tab:'config', t:'Tu trabajo se guarda solo en esta computadora. Guardar y Cargar sirven para llevarlo a otra máquina; Empezar de cero borra lo guardado.'},
+  {sel:'#btnCero',     tab:'config', t:'Tu trabajo se guarda solo en esta computadora: cerrás, volvés mañana y está todo como lo dejaste. Empezar de cero borra lo guardado de este local y arranca limpio — te pide confirmación antes.'},
   {sel:'#btnMiClave',  tab:'config', t:'Acá cambiás tu clave. Tu correo va a seguir funcionando siempre.'},
 ];
 
@@ -1179,6 +1182,13 @@ function abrirApp(loc){
   } else {
     document.getElementById('quienSoy').innerHTML = '<b>Administración</b> · todos los locales';
     document.getElementById('btnMiClave').style.display='none';
+  }
+  // Guardar y Cargar mueven la configuración entre computadoras. Un gerente de
+  // local no lo necesita —su trabajo se guarda solo— y son dos botones más que
+  // explicar, así que quedan sólo para Administración.
+  for(const id of ['btnGuardar','btnCargar']){
+    const b = document.getElementById(id);
+    if(b) b.style.display = ES_ADMIN ? '' : 'none';
   }
   cargarHorarios(DATA[sel.value]);
   RESULTADO=null; IDEAL_POS=null; IDEAL_ROT=null; FALTAS=[];
@@ -4015,7 +4025,11 @@ let _pisoTocado = false;
 function sincronizarPiso(forzar){
   const inp = document.getElementById('pisoFT'); if(!inp) return;
   if(forzar || !_pisoTocado || inp.value===''){
-    inp.value = EQUIPO.length ? ftActuales() : (_idealCfg ? _idealCfg.filter(q=>q.ct.tipo==='FT').length : 0);
+    // Con equipo cargado, el campo sigue a la dotación real del local. Sin
+    // equipo queda VACÍO: antes se precargaba con los full time del MIX IDEAL,
+    // que no es el dato del local y hacía creer que la herramienta ya sabía
+    // cuánta gente tiene.
+    inp.value = EQUIPO.length ? ftActuales() : '';
     if(forzar) _pisoTocado = false;
   }
 }
@@ -4058,6 +4072,10 @@ function aplicarDotacion(contratos){
 // regenera el horario. Un solo paso.
 function calcularPiso(){
   const inp = document.getElementById('pisoFT'); if(!inp) return;
+  if(inp.value === ''){
+    alert('Poné primero cuántos full time tenés hoy en cajas.');
+    inp.focus(); return;
+  }
   const piso = Math.max(0, Math.min(60, +inp.value||0));
   inp.value = piso; _pisoTocado = true;
 

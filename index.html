@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Horario del Local · Dotación Actual · v6.55</title>
+<title>Horario del Local · Dotación Actual · v6.68</title>
 <style>
   :root{
     /* La herramienta es de tema claro. Sin esto, un navegador en modo oscuro dibuja
@@ -201,6 +201,68 @@
   .compsel{display:flex; gap:7px; flex-wrap:wrap; align-items:center; margin-bottom:10px;}
   .compchip{background:var(--accent-soft); border:1px solid var(--accent); color:var(--accent);
             border-radius:20px; padding:3px 11px; font-size:13px; font-weight:700;}
+  /* la columna Horario: un botón que dice el estado */
+  .bhor{display:inline-flex; align-items:center; gap:9px; justify-content:space-between; text-align:left;
+        font-family:inherit; font-size:13px; font-weight:600; padding:6px 11px; border-radius:8px;
+        cursor:pointer; min-width:250px; border:1px dashed var(--line); background:#fbfcfd; color:var(--muted);}
+  .bhor:hover{border-color:var(--accent); color:var(--accent);}
+  .bhor.fijo{border:1px solid var(--accent); border-style:solid; background:var(--accent-soft); color:var(--accent);}
+  .bhor .lap{opacity:.75;}
+  #capaHor{position:fixed; inset:0; z-index:10002; background:rgba(31,42,38,.55);
+           display:none; align-items:center; justify-content:center; padding:20px; overflow:auto;}
+  #capaHor .mcaja{max-width:560px; width:100%; background:var(--panel); border-radius:12px;
+                  padding:18px 20px 16px; box-shadow:0 18px 50px rgba(0,0,0,.28); margin:auto;
+                  height:auto; max-height:92vh; overflow:auto; display:block;}
+  #capaHor h2{margin:0 0 3px; font-size:18px;}
+  #capaHor .q{color:var(--muted); font-size:13px; margin:0 0 15px; line-height:1.45;}
+  .hfila{display:grid; grid-template-columns:160px auto; gap:10px; align-items:center; margin-bottom:10px;}
+  .hfila label{font-weight:700;}
+  .hdia{display:grid; grid-template-columns:118px 20px 128px 1fr; gap:8px; align-items:center; margin-bottom:7px;}
+  .hdia > span:last-child{display:flex; gap:8px; align-items:center;}
+  .hdia label{font-weight:700;}
+  .hdia.off label, .hdia.off .u2{opacity:.4;}
+  .u2{font-size:12.5px; color:var(--muted);}
+  .htot{display:flex; justify-content:space-between; align-items:center; margin-top:13px;
+        padding-top:11px; border-top:1px solid var(--line); font-weight:800; font-size:15px;}
+  .htot .ok{color:#1d7a4c;} .htot .mal{color:var(--warn);}
+  .hmal{background:var(--warn-soft); border:1px solid #e8c4bc; color:var(--warn); border-radius:8px;
+        padding:9px 11px; font-size:13px; margin-top:11px; line-height:1.45;}
+  .hinfo{background:var(--accent-soft); border:1px solid #bcd9ef; border-radius:8px;
+         padding:10px 12px; font-size:12.8px; margin-top:12px; line-height:1.5; color:#14557f;}
+  .hacc{display:flex; gap:8px; justify-content:flex-end; margin-top:16px;}
+  /* intercambio de turnos en la vista semana */
+  #hGrilla td.celft{cursor:grab;}
+  #hGrilla td.celft:active{cursor:grabbing;}
+  #hGrilla tr.foco td{background:#f2f7fc;}
+  #hGrilla td.focoCol{background:#f2f7fc;}
+  #hGrilla th.focoCol{background:#dde9f4;}
+  #hGrilla tr.foco td.posname{background:#e7f0f8;}
+  body.arrHor #hGrilla td{opacity:.3; transition:opacity .12s;}
+  body.arrHor #hGrilla td.colAct, body.arrHor #hGrilla td.posname{opacity:1;}
+  /* en la columna activa, lo que no se puede mover queda atenuado y con candado */
+  body.arrHor #hGrilla td.colAct:not(.celft){opacity:.5; position:relative;}
+  body.arrHor #hGrilla td.colAct:not(.celft)::after{content:'🔒'; font-size:10px; margin-left:4px; opacity:.7;}
+  body.arrHor #hGrilla td.colAct.franco::after{content:'';}
+  #hGrilla td.si{background:#e3f3ea!important; box-shadow:inset 0 0 0 2px #4ea87a;}
+  #hGrilla td.no{background:#f9e8e4!important; box-shadow:inset 0 0 0 2px #d9a79d;}
+  #hGrilla td.yendo{opacity:.4;}
+  #hGrilla td.swap{background:#fff6d9!important; box-shadow:inset 0 0 0 1px #e3c968;}
+  .swbar{display:flex; gap:9px; align-items:center; flex-wrap:wrap; margin:0 0 9px;}
+  #capaSwap{position:fixed; inset:0; z-index:10003; background:rgba(31,42,38,.55);
+            display:none; align-items:center; justify-content:center; padding:20px; overflow:auto;}
+  #capaSwap .mcaja{max-width:560px; width:100%; background:var(--panel); border-radius:12px;
+                   padding:18px 20px 16px; box-shadow:0 18px 50px rgba(0,0,0,.28); margin:auto;
+                   height:auto; max-height:92vh; overflow:auto; display:block;}
+  #capaSwap h2{margin:0 0 3px; font-size:18px;}
+  .swopt{display:flex; justify-content:space-between; align-items:center; gap:12px; width:100%;
+         font-family:inherit; font-size:14px; text-align:left; padding:11px 13px; margin-bottom:8px;
+         border:1px solid var(--line); border-radius:9px; background:#fff; color:var(--ink); cursor:pointer;}
+  .swopt:hover{border-color:var(--accent); background:var(--accent-soft);}
+  .swopt b{display:block;}
+  .swopt .u2{font-size:12.3px; color:var(--muted); margin-top:2px; display:block;}
+  .swopt .hh{font-size:12.5px; font-weight:700; color:var(--accent); white-space:nowrap; font-family:Consolas,monospace;}
+  .swno{display:flex; justify-content:space-between; gap:12px; padding:9px 13px; margin-bottom:6px;
+        border:1px dashed var(--line); border-radius:9px; color:var(--muted); font-size:12.8px;}
   .prodtab{display:flex; gap:7px; align-items:center; flex-wrap:wrap; margin-bottom:9px;}
   /* comparación cara a cara, en cuadros */
   .verdic{font-size:19px; font-weight:800; line-height:1.35; margin:2px 0 14px;}
@@ -319,6 +381,27 @@
   </div>
 </div>
 
+<div id="capaSwap">
+  <div class="mcaja">
+    <h2 id="swTit"></h2>
+    <p class="small" id="swSub" style="margin:0 0 15px"></p>
+    <div id="swCuerpo"></div>
+    <div class="hacc"><button type="button" class="btn" id="swX">Cerrar</button></div>
+  </div>
+</div>
+
+<div id="capaHor">
+  <div class="mcaja">
+    <h2 id="hTit"></h2>
+    <p class="q" id="hSub"></p>
+    <div id="hCuerpo"></div>
+    <div class="hacc">
+      <button type="button" class="btn" id="hCancel">Cancelar</button>
+      <button type="button" class="btn primary" id="hOk">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <div id="avisoDesc"></div>
 
 <div id="capaTexto">
@@ -372,11 +455,19 @@
   <div class="box">
     <h3>Horario del local</h3>
     <div class="rowflex">
+      <span id="box24" style="display:none; margin-right:16px">
+        <label for="chk24" style="margin:0; font-weight:700; cursor:pointer; color:var(--accent)">
+          <input type="checkbox" id="chk24" style="vertical-align:-2px; margin-right:5px">Abierto las 24 horas
+        </label>
+      </span>
       <label>L–Sáb:</label>
       <input type="time" id="lsOpen" step="1800"> – <input type="time" id="lsClose" step="1800">
       <label style="margin-left:12px">Dom y feriados:</label>
       <input type="time" id="doOpen" step="1800"> – <input type="time" id="doClose" step="1800">
-      <span class="small" id="h24note" style="display:none">Local 24 hs — los horarios no aplican.</span>
+    </div>
+    <div class="small" id="h24note" style="display:none; margin-top:7px">
+      Con la casilla marcada tu local se dimensiona <b>abierto las 24 horas</b> y los campos de horario no se usan.
+      Si tu local cierra en algún momento del día, <b>destildala</b> y cargá tu horario real: la dotación y los feriados se recalculan solos.
     </div>
   </div>
 
@@ -406,16 +497,16 @@
       <label>Cantidad de personas:</label>
       <input type="number" id="nEquipo" min="1" max="60" value="10" style="width:80px">
       <button class="btn mini" id="btnEquipo">Aplicar</button>
-      <label style="margin-left:14px">Corte (solo FT): mín</label>
+      <label style="margin-left:14px" title="No es un valor fijo: es la banda dentro de la cual la herramienta busca. Para cada persona y cada día prueba todos los huecos de este rango y se queda con el que mejor cubre ese día.">Hueco permitido del cortado: entre</label>
       <input type="number" id="corteMin" min="0.5" max="8" step="0.5" value="1" style="width:65px"> hs
-      <label>· máx</label>
+      <label>y</label>
       <input type="number" id="corteMax" min="1" max="10" step="0.5" value="4" style="width:65px"> hs
-      <span class="small" style="max-width:780px; font-size:13.5px">Poné cuántos son y tocá <b>Aplicar</b>: se habilitan las filas. <b>Corte</b>: horas libres entre los dos bloques de un turno cortado. <b>Sector</b>: fija a alguien a un puesto en la ventana de ese sector; el resto del turno lo hace en cajas. No cambia el costo.</span>
+      <span class="small" style="max-width:780px; font-size:13.5px">Poné cuántos son y tocá <b>Aplicar</b>: se habilitan las filas. <b>Hueco permitido</b>: no es un valor fijo, es el rango dentro del cual la herramienta elige — para cada persona y cada día prueba todos los huecos de ese rango y se queda con el que mejor cubre. <b>Sector</b>: fija a alguien a un puesto en la ventana de ese sector; el resto del turno lo hace en cajas. No cambia el costo.</span>
     </div>
     <div class="tablewrap"><table id="tablaEquipo"><thead><tr>
       <th style="width:30px">#</th><th>Nombre</th><th>Contrato</th><th>Condición</th>
       <th title="Fija a esa persona como base del sector: la cubre toda su ventana. En las horas pico el sistema le manda un refuerzo desde la línea, si hay de dónde sacarlo.">Sector</th>
-      <th>Estado</th><th>Disponible desde</th><th>hasta</th><th title="Día libre semanal de la persona. En Aleatorio lo elige el sistema buscando el día que menos afecta la cobertura.">Día libre</th><th title="Solo FT: permite dividir el día en dos bloques de 4 hs">Cortado</th>
+      <th>Estado</th><th title="Cuándo trabaja esta persona. En un full time: entre qué horas puede y qué día descansa. En un part time: los días y las horas de su contrato.">Horario</th><th title="Sólo full time. Marcada, la herramienta queda habilitada a partirle el día en dos bloques de 4 hs. Ella decide qué días conviene y a qué hora, con un máximo de 3 jornadas partidas por semana.">Cortado</th>
     </tr></thead><tbody></tbody></table></div>
   </div>
 
@@ -685,7 +776,9 @@ function _tramoTxt(){
 
 function _horarioLocalTxt(){
   const loc = DATA[document.getElementById('localSel').value];
-  if(loc && loc.is24) return '<p>Tu local está abierto <b>las 24 horas</b>, así que los campos de horario no aplican.</p>';
+  if(loc && loc.is24 && es24()) return `<p>Tu local figura <b>abierto las 24 horas</b>, así que los campos de horario están en gris.</p>
+    <p>Si en realidad cierra en algún momento —de madrugada, los domingos, los feriados— <b>destildá la casilla «Abierto las 24 horas»</b> y cargá tu horario real. Toda la demanda y los feriados se recalculan con eso.</p>
+    <p class="mnota">Destildar la casilla por sí solo no cambia nada: los campos arrancan en 00:00 a 00:00, que es el día completo. La dotación cambia recién cuando escribís tu horario.</p>`;
   const g = id => document.getElementById(id).value;
   return `<p>Tu local está cargado con <b>${g('lsOpen')} a ${g('lsClose')}</b> de lunes a sábado y <b>${g('doOpen')} a ${g('doClose')}</b> los domingos y feriados. Si tu local abre distinto, corregilo ahí y todo se recalcula.</p>`;
 }
@@ -741,6 +834,15 @@ const MANUAL_SECS = [
     ${_tablaCondiciones()}
     <h4>Estado y ausencias</h4>
     <p>Sirve para las que no van a estar todo el mes. Los estados son: ${ESTADOS.join(' · ')}.</p>
+    <h4>La columna Horario</h4>
+    <p>Reemplaza a las tres columnas que había antes —«Disponible desde», «hasta» y «Día libre»—, porque las tres contestaban lo mismo: <b>cuándo trabaja esta persona</b>. El botón muestra cómo quedó; tocándolo se configura.</p>
+    ${_li([
+      '<b>Full time</b> — entre qué horas puede trabajar y qué día descansa. El horario de cada día lo arma la herramienta con la demanda de tu local.',
+      '<b>Part time</b> — los días y las horas de su contrato. Marcás los días, ponés desde qué hora hasta qué hora, y no te deja guardar hasta que el total dé exactamente las horas del contrato.',
+    ])}
+    <p>Con el horario de contrato cargado, la herramienta <b>no le elige los turnos</b>: usa los que pusiste, tal cual, las cuatro o cinco semanas del mes. Los días que no marcaste son sus días libres, así que no hace falta cargar nada más.</p>
+    <p class="mnota">Si después le cambiás el contrato a esa persona, el horario cargado se descarta: estaba hecho para las horas del contrato anterior.</p>
+
     <p>Al elegir cualquiera que no sea Activo aparecen dos fechas: <b>desde</b> y <b>hasta</b>. Podés poner 3 días, una semana y media o un día suelto — no hace falta que sea una semana entera. Esa persona no aparece en el horario de esos días y el resto del equipo se reacomoda para tapar el hueco. En las semanas que sí está, trabaja normal.</p>
     <h4>Disponible desde / hasta</h4>
     <p>La franja en la que esa persona puede trabajar. La condición la precarga, pero la podés ajustar. Si la hora de salida es <b>anterior</b> a la de entrada, se entiende que el turno cruza la medianoche y aparece el cartel "+1 día".</p>
@@ -761,7 +863,10 @@ const MANUAL_SECS = [
     <h4>Día libre</h4>
     <p>En <b>Aleatorio</b> lo elige el sistema buscando el día que menos afecta la cobertura. Si a alguien le corresponde un día fijo, elegilo y se respeta.</p>
     <h4>Cortado</h4>
-    <p>Sólo para full time: parte el día en dos bloques de 4 horas con un hueco en el medio (el mínimo y el máximo de ese hueco se configuran arriba de la tabla). Sirve para cubrir el pico del mediodía y el de la tarde con la misma persona. No se aplica a jornadas reducidas.</p>` },
+    <p>Sólo para full time. La casilla <b>habilita</b>, no ordena: marcarla le permite a la herramienta partirle el día a esa persona en dos bloques de 4 horas, y es la herramienta la que decide en qué días conviene hacerlo y a qué hora, mirando la demanda de cada día. Los días de curva pareja los deja corridos.</p>
+    <p>El <b>hueco permitido</b> que se configura arriba de la tabla no es un valor fijo: es el rango dentro del cual la herramienta busca. Para cada persona y cada día prueba todos los huecos de ese rango y se queda con el que mejor cubre, así que dos personas del mismo local pueden terminar con huecos distintos.</p>
+    <p><b>El tope de 3 por semana.</b> Nadie hace más de tres jornadas partidas en una misma semana, y no es configurable. Sin ese tope el motor le parte el día a la misma persona todos los días del mes si eso cubre mejor: medido en los 92 locales pasaba en 11 de ellos, con casos de 30 jornadas partidas sobre 30 días trabajados. Con el tope eso desaparece y cuesta 22 horas de cobertura al mes en toda la cadena.</p>
+    <p>No se aplica a part time ni a jornadas reducidas por maternidad. Un turno cortado <b>no lleva hora de descanso</b>: son dos bloques de 4 horas, 8 horas de trabajo y 8 de presencia.</p>` },
 
   { id:'bajas', t:'Si se va alguien: el piso de full time', h:()=>`
     <p>Es la pregunta del día a día: <b>con los full time que voy a tener, ¿me alcanza o me falta gente?</b></p>
@@ -797,9 +902,24 @@ const MANUAL_SECS = [
     <h4>La vista día, paso a paso</h4>
     <p>Es el gráfico que más cuesta al principio y el que más sirve después, así que vale la pena leerlo con calma. Se lee en tres partes.</p>
     <p><b>1. Las filas de arriba: una persona cada una.</b> La barra pintada arranca cuando entra y termina cuando sale. Ojo con esto: la barra es la <b>presencia</b> en el local, con el descanso incluido adentro. Una jornada de 8 horas de trabajo pinta 9 horas de barra, porque tiene 1 hora de descanso. Verde es full time, azul part time, y gris significa que ese día no trabaja. Si la barra aparece en dos pedazos con un hueco en el medio, es un turno cortado y el hueco es el tiempo libre entre los dos bloques.</p>
-    <p><b>2. Las columnas de texto.</b> A la izquierda de las barras están el <i>horario del día</i> y el <i>receso</i> que le corresponde. La barra no dibuja el receso como un corte a propósito: dónde cae exactamente dentro del turno lo decide el local según cómo venga la tarde.</p>
+    <p><b>2. Las columnas de texto.</b> A la izquierda de las barras están el <i>horario del día</i> y el <i>receso</i> que le corresponde. La herramienta ubica el receso en la hora más floja del turno y lo escalona entre la gente, y la barra lo dibuja rayado: durante ese rato la persona está en el local pero no en la caja, así que no suma a la dotación activa.</p>
     <p><b>3. Las filas de control, abajo de todas las personas.</b> <i>Dotación activa</i> es cuánta gente hay atendiendo en cada hora, con su desglose en full time y part time. Y <i>Requeridos</i> es cuánta hace falta esa hora. Esa última fila viene pintada: <b>rojo</b> significa que falta gente, <b>amarillo</b> que estás justo —cubierto, pero sin margen para que alguien falte— y sin color que estás cubierto con holgura.</p>
     <p>La lectura práctica: bajás la vista a la fila de <i>Requeridos</i>, buscás el rojo, subís por esa columna y ves quién está y quién no a esa hora. Ahí decidís a quién mover.</p>
+    <h4>Cambiarle el turno a dos full time</h4>
+    <p>En la vista semana, los turnos de los <b>full time</b> se pueden intercambiar: <b>tocá</b> una celda y elegí con quién, o <b>arrastrala</b> sobre otra del mismo día. Mientras arrastrás, las celdas donde se puede soltar se marcan en verde y las que no, en rojo.</p>
+    <p><b>La cobertura de tu local no cambia.</b> Son los mismos turnos del mismo día, hechos por otra persona: el local queda atendido exactamente igual. Por eso esto no te cuesta nada y lo podés usar con confianza.</p>
+    <p>No deja cambiar cuando:</p>
+    ${_li([
+      'alguno de los dos es <b>part time</b> — su horario es el de su contrato,',
+      'no es el <b>mismo día</b>,',
+      'alguno <b>descansa</b> ese día o está ausente,',
+      'los turnos son de <b>distinto largo</b>, por ejemplo una jornada reducida por maternidad,',
+      'a alguno <b>no le entra en su disponibilidad</b>,',
+      'se rompe el <b>descanso de 12 horas</b> con el día anterior o el siguiente.',
+    ])}
+    <p>El último es el único que tiene vuelta: pasa siempre que alguien salta de tarde a mañana. Si cambiando también los días que siguen el descanso entra, la herramienta te lo ofrece y lo hace sola — no tenés que entender el problema.</p>
+    <p class="mnota">Los intercambios se guardan con el resto de tu trabajo y se vuelven a aplicar cuando volvés a generar. Si alguno deja de ser posible porque cambiaste el equipo, se descarta solo.</p>
+
     <h4>Las dos grillas de abajo, en la vista semana</h4>
     <p>Abajo del horario hay dos tablas con la misma forma —los días en filas, las horas en columnas— que se leen una después de la otra:</p>
     ${_li([
@@ -807,6 +927,13 @@ const MANUAL_SECS = [
       '<b>Cobertura por hora</b> — la misma tabla menos lo que el local necesita esa hora. Acá sí hay color: <b>rojo</b> falta gente, <b>amarillo</b> estás justo, <b>azul</b> sobra. Pasando el mouse por una celda te dice cuántos hay y cuántos hacen falta.',
     ])}
     <p>Primero mirás cuánta gente hay, después si esa cantidad alcanza. Es el mismo razonamiento de la vista día, pero para la semana entera de un vistazo.</p>
+    <h4>Por qué algunas semanas no se ven iguales</h4>
+    <p>Las semanas del mes no venden lo mismo: entre la más floja y la más cargada suele haber entre un 2% y un 6% de diferencia. El horario sigue esa diferencia, con dos reglas:</p>
+    ${_li([
+      'El <b>part time no se mueve</b>. Se lo contrata con un horario fijo y días libres fijos, así que su horario es el mismo las cuatro o cinco semanas.',
+      'Los <b>full time</b> se reacomodan en las semanas más cargadas —entran antes, cambian su día libre— y sólo cuando eso mejora la cobertura. Si no mejora, la semana queda igual a las demás.',
+    ])}
+    <p>Por eso en algunos locales vas a ver semanas distintas y en otros no: depende de cuántos full time tengas y de cuánto varíe la demanda de tu local. Nunca cambia la cantidad de gente ni el contrato de nadie.</p>
     <p>Estas dos grillas aparecen también en el escenario <b>Mix ideal</b>, medidas contra la misma demanda de la misma semana. Cambiando de escenario y mirando el mismo lugar de la pantalla ves si el mix ideal cubre mejor, no sólo si sale más barato.</p>
     <p>El mix ideal también respeta el interruptor de <b>turnos rotativos</b>: si lo activás, sus full time alternan banda semana por medio igual que tu equipo, así la comparación es pareja. Si está apagado, el mix repite el mismo horario todas las semanas — es una <b>semana tipo</b>, no un plan que se redibuja según vacaciones y días libres como el de tu gente. Lo que sí cambia semana a semana es la <b>cobertura</b>, porque la demanda de cada semana es distinta: ahí se ve si el mix aguanta también las semanas fuertes.</p>
     <p>Si querés que te lo muestre en la pantalla tabla por tabla, usá el botón <b>👉 Horarios en pantalla</b> de acá arriba.</p>
@@ -875,7 +1002,8 @@ const TOUR = [
   {sel:'#mesSel',      tab:'config', t:'El mes que estás armando. El horario toma semanas enteras de lunes a domingo, así que puede arrancar en el mes anterior.'},
   {sel:'#pisoFTBox',   tab:'config', t:'Empezá por acá: poné cuántos full time tenés hoy en cajas y tocá Recalcular. Te armo la dotación que hace falta, te la dejo cargada en Mi equipo y genero el horario de una. Después, si se te va alguien, bajás el número en uno y volvés a tocar Recalcular para ver si hay que reponer.'},
   {sel:'#idealConfig', tab:'config', t:'Los tres cubos que contestan todo. Tu equipo de hoy, de qué contrato es cada part time y cuánto cuesta por mes; abajo, resaltado, si te hacen falta part time o no. Al medio, las horas que tenés contratadas contra la demanda real del local. Y a la derecha, cuál sería el mix más barato para esa misma demanda.'},
-  {sel:'#lsOpen',      tab:'config', t:'El horario de tu local. Si abre distinto a lo que dice acá, corregilo: toda la demanda se recalcula.'},
+  {sel:'#tablaEquipo', tab:'config', t:'Una fila por persona. En la columna HORARIO decís cuándo trabaja cada uno: para un full time, entre qué horas puede y qué día descansa; para un part time, los días y las horas de su contrato. El botón te muestra cómo quedó sin tener que abrirlo.'},
+  {sel:'#lsOpen',      tab:'config', t:'El horario de tu local. Si abre distinto a lo que dice acá, corregilo: toda la demanda se recalcula. Si tu local figura abierto las 24 horas y en realidad cierra en algún momento, destildá la casilla de la izquierda y cargá tu horario real.'},
   {sel:'#gridFeriados',tab:'config', t:'Los feriados del mes vienen marcados. Si alguno se trasladó, desmarcalo y marcá el que va.'},
   {sel:'#selRotativo', tab:'config', t:'Turnos rotativos: los full time alternan mañana y tarde semana a semana, sin que cambien los turnos del local.'},
   {sel:'#nEquipo',     tab:'config', t:'Empezá acá: cuántas personas sos, y tocá Aplicar para habilitar las filas.'},
@@ -904,8 +1032,8 @@ const TOUR_HOR = [
   {sel:'#hCobertura', tab:'hor', vista:'sem',  t:'Cobertura por hora: la misma grilla de arriba, menos lo que el local necesita esa hora. Rojo, falta gente. Amarillo, estás justo. Azul, sobra. Es el lugar para ver de un vistazo si el mes cierra. Pasando el mouse por una celda te dice cuántos hay y cuántos hacen falta.'},
   {sel:'#hFalta',     tab:'hor', vista:'sem',  t:'Si hoy te faltó alguien, cargalo acá: elegís la persona y la fecha, y abajo te digo qué turno tenía ese día. Al marcarla, su turno se descuenta de la cobertura y te muestro qué franjas quedan descubiertas y quién del equipo podría cubrirlas.'},
   {sel:'#hVistaDia',  tab:'hor', vista:'dia',  t:'Ésta es la vista día, la más útil para ver cómo queda cubierto un día concreto. Elegí acá el día y abajo se dibuja la jornada completa, hora por hora.'},
-  {sel:'#hDiaTabla',  tab:'hor', vista:'dia',  t:'Cada fila es una persona y cada columna una hora. La barra pintada va desde que entra hasta que sale: es su PRESENCIA, con el descanso incluido adentro — por eso una jornada de 8 h de trabajo pinta 9 h de barra. Verde es full time, azul part time, gris ese día no trabaja. Si la barra viene en dos pedazos, es un turno cortado.'},
-  {sel:'#hDiaReceso', tab:'hor', vista:'dia',  t:'Las dos columnas de la izquierda repiten el dato en texto: el horario del día y cuánto receso le corresponde. Dónde cae el receso dentro del turno lo decide el local, así que la barra no lo dibuja como un corte.'},
+  {sel:'#hDiaTabla',  tab:'hor', vista:'dia',  t:'Cada fila es una persona y cada columna una hora. La barra pintada va desde que entra hasta que sale: es su PRESENCIA, con el descanso incluido adentro — por eso una jornada de 8 h de trabajo pinta 9 h de barra, con la hora de receso rayada adentro. Verde es full time, azul part time, gris ese día no trabaja. Si la barra viene en dos pedazos, es un turno cortado.'},
+  {sel:'#hDiaReceso', tab:'hor', vista:'dia',  t:'Las dos columnas de la izquierda repiten el dato en texto: el horario del día y cuánto receso le corresponde. En la barra, ese rato aparece rayado: está en el local pero no en la caja, así que no cuenta como cobertura.'},
   {sel:'#hDiaDot',    tab:'hor', vista:'dia',  t:'Abajo de todas las personas están las filas de control: cuánta gente hay atendiendo en cada hora, desglosada en full time y part time.'},
   {sel:'#hDiaReq',    tab:'hor', vista:'dia',  t:'Y ésta es la fila que hay que mirar: cuánta gente HACE FALTA en cada hora. En rojo, te falta gente. En amarillo, estás justo y una sola falta abre un hueco. Sin color, cubierto. Comparando esta fila con la de arriba sabés exactamente a qué hora del día estás corto.'},
   {sel:'#hProd',      tab:'hor', vista:'prod', t:'Productividad: tickets promedio de cada hora dividido por la gente programada. Rojo, sobrecargados. Azul, holgados. Te dice si el horario está bien repartido, no sólo si alcanza.'},
@@ -1222,7 +1350,7 @@ function restaurarTrabajo(loc){
     if(av){ av.style.display='none'; av.innerHTML=''; }
     if(cfg.generado && EQUIPO.length){
       const lc = DATA[document.getElementById('localSel').value];
-      RESULTADO = asignarEquipo(lc); etiquetarTodo(lc);
+      RESULTADO = asignarEquipo(lc); etiquetarTodo(lc); aplicarSwaps();
       renderRotNota(); renderHorarios();
     }
   }catch(e){ if(av) av.style.display='none'; }
@@ -1539,6 +1667,200 @@ function planRotadoIdeal(posA, opd, cld){
   return {pos:posB, pares, corte};
 }
 
+// ── intercambio de turnos entre full time ───────────────────────────────────
+// Cambiar el turno de dos full time del mismo día no mueve la cobertura: es el
+// mismo turno, hecho por otra persona. Por eso esto es seguro y por eso vive
+// fuera del motor: se aplica ENCIMA del plan que el motor ya calculó.
+let SWAPS = [];            // [{w, a, b, dias[]}] · a y b son índices de EQUIPO
+let SWAP_SEL = null;
+
+function _pos(plan, emp){ return plan.find(x => x.emp === emp); }
+// de qué hora a qué hora está esa persona ese día, contando el turno cortado entero
+function diaRango(p, d){
+  const as = p.asig.filter(a=>a.d===d).sort((x,y)=>x.e-y.e);
+  if(!as.length) return null;
+  return {ini:as[0].e, fin:as[as.length-1].e+as[as.length-1].pres,
+          pres:as.reduce((x,a)=>x+a.pres,0), as};
+}
+// primer choque con el descanso de 12 h, dando la vuelta a la semana
+function choqueDescanso(plan, emp){
+  const p=_pos(plan, emp); if(!p) return null;
+  for(let d=0; d<7; d++){
+    const a=diaRango(p,d), b=diaRango(p,(d+1)%7);
+    if(!a||!b) continue;
+    const h=(b.ini + 48 - a.fin)/2;
+    if(h < 12) return {d, dSig:(d+1)%7, h, sale:a.fin, entra:b.ini};
+  }
+  return null;
+}
+function _clonar(plan){
+  return plan.map(p => Object.assign({}, p, {asig: p.asig.map(a=>Object.assign({},a))}));
+}
+function _swapDias(plan, a, b, dias){
+  const pa=_pos(plan,a), pb=_pos(plan,b);
+  for(const d of dias){
+    const ta=pa.asig.filter(x=>x.d===d), tb=pb.asig.filter(x=>x.d===d);
+    pa.asig = pa.asig.filter(x=>x.d!==d).concat(tb.map(x=>Object.assign({},x)));
+    pb.asig = pb.asig.filter(x=>x.d!==d).concat(ta.map(x=>Object.assign({},x)));
+  }
+}
+// ¿se puede? Devuelve {ok, dias} o {ok:false, r:'motivo en castellano'}
+function puedeSwap(w, a, b, d){
+  const plan = posSemana(w);
+  const pa=_pos(plan,a), pb=_pos(plan,b);
+  if(!pa||!pb||a===b) return {ok:false, r:'es la misma persona'};
+  if(pa.ct.tipo!=='FT'||pb.ct.tipo!=='FT')
+    return {ok:false, r:'el horario del part time es el de su contrato y no se mueve'};
+  const ea=EQUIPO[a], eb=EQUIPO[b];
+  if(pa.ausente||pb.ausente||pa.sinHorario||pb.sinHorario) return {ok:false, r:'esa semana no tiene horario'};
+  if(diaAusente(ea,w,d)||diaAusente(eb,w,d)) return {ok:false, r:'ese día está ausente'};
+  const ra=diaRango(pa,d), rb=diaRango(pb,d);
+  if(!ra||!rb) return {ok:false, r:'ese día descansa'};
+  if(ra.pres!==rb.pres)
+    return {ok:false, r:`ese día hace ${fmtHM(rb.pres/2)} de presencia y ${pa.nombre||('Empleado '+(a+1))} hace ${fmtHM(ra.pres/2)}`};
+  if(rb.ini<ea.desde||rb.fin>ea.hasta)
+    return {ok:false, r:`${pa.nombre||('Empleado '+(a+1))} está disponible de ${slotToHM(ea.desde)} a ${ea.hasta===48?'24:00':slotToHM(ea.hasta)}`};
+  if(ra.ini<eb.desde||ra.fin>eb.hasta)
+    return {ok:false, r:`está disponible de ${slotToHM(eb.desde)} a ${eb.hasta===48?'24:00':slotToHM(eb.hasta)}`};
+  // el descanso de 12 h: se prueba el día suelto y, si no entra, el bloque de días
+  for(let n=1; n<=6; n++){
+    const dias=[]; let k=d, corta=false;
+    for(let x=0;x<n;x++){
+      if(!diaRango(pa,k)||!diaRango(pb,k)){ corta=true; break; }
+      dias.push(k); k=(k+1)%7;
+    }
+    if(corta||!dias.length) break;
+    const pr=_clonar(plan); _swapDias(pr,a,b,dias);
+    if(!choqueDescanso(pr,a) && !choqueDescanso(pr,b)) return {ok:true, dias, rango:rb};
+  }
+  const pr=_clonar(plan); _swapDias(pr,a,b,[d]);
+  const ca=choqueDescanso(pr,a), cb=choqueDescanso(pr,b);
+  const c=ca||cb, quien = ca ? (pa.nombre||('Empleado '+(a+1))) : (pb.nombre||('Empleado '+(b+1)));
+  return {ok:false, r: c
+    ? `${quien} saldría ${DIAS_LARGO[c.d].toLowerCase()} ${slotToHM(c.sale)} y entraría ${DIAS_LARGO[c.dSig].toLowerCase()} ${slotToHM(c.entra)}: ${fmtHM(c.h)} de descanso`
+    : 'no entra el descanso de 12 horas'};
+}
+// Vuelve a aplicar la lista de intercambios sobre el plan recién calculado.
+// Los que ya no sean válidos (cambió el equipo, una ausencia nueva) se descartan.
+function aplicarSwaps(){
+  if(!RESULTADO || !SWAPS.length) return;
+  const local = DATA[document.getElementById('localSel').value];
+  const vivos = [];
+  for(const s of SWAPS){
+    if(s.w >= nSem()) continue;
+    const v = puedeSwap(s.w, s.a, s.b, s.dias[0]);
+    if(!v.ok) continue;
+    const plan = _clonar(posSemana(s.w));
+    _swapDias(plan, s.a, s.b, v.dias);
+    try{ etiquetar(plan, RESULTADO.opd, RESULTADO.cld, local); }catch(e){}
+    RESULTADO.posSem[s.w] = plan;
+    vivos.push({w:s.w, a:s.a, b:s.b, dias:v.dias});
+  }
+  SWAPS = vivos;
+}
+function rehacerPlan(){
+  const local = DATA[document.getElementById('localSel').value];
+  RESULTADO = asignarEquipo(local); etiquetarTodo(local); aplicarSwaps();
+}
+function hacerSwap(w,a,b,dias){
+  SWAPS.push({w,a,b,dias});
+  rehacerPlan();
+  cerrarSwap(); SWAP_SEL=null;
+  document.body.classList.remove('arrHor');
+  renderHorarios(); autoguardar();
+  const na=EQUIPO[a].nombre||('Empleado '+(a+1)), nb=EQUIPO[b].nombre||('Empleado '+(b+1));
+  avisoSwap(true, dias.length>1
+    ? `Listo: <b>${na}</b> y <b>${nb}</b> se intercambiaron ${dias.length} días (${dias.map(d=>DIAS[d]).join(', ')}). La cobertura del local no cambió: son los mismos turnos, hechos por otra persona.`
+    : `Listo: <b>${na}</b> y <b>${nb}</b> se intercambiaron el turno del ${DIAS_LARGO[dias[0]].toLowerCase()}. La cobertura del local no cambió.`);
+}
+function deshacerSwap(){ if(!SWAPS.length) return; SWAPS.pop(); rehacerPlan(); renderHorarios(); autoguardar();
+  avisoSwap(true,'Se deshizo el último intercambio.'); }
+function limpiarSwaps(){ if(!SWAPS.length) return; SWAPS=[]; rehacerPlan(); renderHorarios(); autoguardar();
+  avisoSwap(true,'Volviste al horario que armó la herramienta.'); }
+let _avisoSwap = null;
+function avisoSwap(bien, txt){
+  _avisoSwap = {bien, txt};
+  const el=document.getElementById('swAviso');
+  if(el){ el.style.display='block'; el.className = 'box ' + (bien?'':'warnbanner');
+    el.style.borderColor = bien ? '#a8d6bb' : ''; el.style.background = bien ? '#e3f3ea' : '';
+    el.innerHTML = txt; }
+}
+function cerrarSwap(){ document.getElementById('capaSwap').style.display='none'; }
+function menuSwap(w, a, d){
+  const plan=posSemana(w), pa=_pos(plan,a);
+  const si=[], no=[];
+  for(const p of plan){
+    if(p.emp===a || p.ct.tipo!=='FT') continue;
+    const v=puedeSwap(w,a,p.emp,d);
+    const nm=p.nombre||('Empleado '+(p.emp+1));
+    if(v.ok) si.push({b:p.emp, nm, dias:v.dias, rango:v.rango});
+    else no.push({nm, r:v.r});
+  }
+  const ra=diaRango(pa,d);
+  document.getElementById('swTit').textContent =
+    `Turno de ${pa.nombre||('Empleado '+(a+1))} · ${DIAS_LARGO[d].toLowerCase()} ${diaMes(fechaDe(w,d))}/${mesDe(fechaDe(w,d))}`;
+  document.getElementById('swSub').innerHTML =
+    `Ahora hace <b>${slotToHM(ra.ini)} a ${slotToHM(ra.fin)}</b>. ¿Con quién querés cambiárselo? La cobertura del local no cambia.`;
+  let h = si.length ? si.map(o=>`<button type="button" class="swopt" onclick="hacerSwap(${w},${a},${o.b},[${o.dias}])">
+      <span><b>${o.nm}</b><span class="u2">${o.dias.length>1
+        ? 'Se cambian '+o.dias.length+' días seguidos ('+o.dias.map(x=>DIAS[x]).join(', ')+') para que entre el descanso de 12 h'
+        : 'Sólo el '+DIAS_LARGO[d].toLowerCase()}</span></span>
+      <span class="hh">${slotToHM(o.rango.ini)}–${slotToHM(o.rango.fin)}</span></button>`).join('')
+    : '<div class="swno">Hoy no hay con quién cambiar este turno.</div>';
+  if(no.length) h += '<div class="small" style="margin:14px 0 7px"><b>No se puede con:</b></div>'
+      + no.map(x=>`<div class="swno"><span><b>${x.nm}</b></span><span style="text-align:right">${x.r}</span></div>`).join('');
+  document.getElementById('swCuerpo').innerHTML = h;
+  document.getElementById('capaSwap').style.display='flex';
+}
+// arrastre
+function swapDragStart(td,w,a,d){
+  SWAP_SEL={w,a,d}; td.classList.add('yendo');
+  document.body.classList.add('arrHor');
+  document.querySelectorAll('#hGrilla td[data-d="'+d+'"]').forEach(x=>x.classList.add('colAct'));
+  document.querySelectorAll('#hGrilla td.celft').forEach(x=>{
+    const i=+x.dataset.i, dd=+x.dataset.d;
+    if(dd!==d||i===a) return;
+    x.classList.add(puedeSwap(w,a,i,d).ok ? 'si' : 'no');
+  });
+}
+function swapDragEnd(){
+  document.body.classList.remove('arrHor');
+  document.querySelectorAll('#hGrilla td').forEach(x=>x.classList.remove('si','no','yendo','colAct'));
+  setTimeout(()=>{ SWAP_SEL=null; }, 80);
+}
+function swapDrop(w,b,d){
+  if(!SWAP_SEL) return;
+  if(SWAP_SEL.d!==d){ avisoSwap(false,'Los turnos se cambian <b>dentro del mismo día</b>.'); return; }
+  const v=puedeSwap(w, SWAP_SEL.a, b, d);
+  const nb=EQUIPO[b].nombre||('Empleado '+(b+1));
+  if(!v.ok){ avisoSwap(false,`No se puede: <b>${nb}</b> ${v.r}.`); return; }
+  hacerSwap(w, SWAP_SEL.a, b, v.dias);
+}
+function focoHor(tr,d){
+  document.querySelectorAll('#hGrilla tr.foco').forEach(x=>x.classList.remove('foco'));
+  document.querySelectorAll('#hGrilla .focoCol').forEach(x=>x.classList.remove('focoCol'));
+  if(!tr) return;
+  tr.classList.add('foco');
+  document.querySelectorAll('#hGrilla [data-d="'+d+'"]').forEach(x=>x.classList.add('focoCol'));
+}
+function cablearGrilla(w){
+  const g=document.getElementById('hGrilla'); if(!g) return;
+  g.querySelectorAll('td[data-d]').forEach(td=>{
+    td.addEventListener('mouseenter',()=>focoHor(td.closest('tr'), +td.dataset.d));
+  });
+  g.addEventListener('mouseleave',()=>focoHor(null,null));
+  g.querySelectorAll('td.celft').forEach(td=>{
+    const i=+td.dataset.i, d=+td.dataset.d;
+    td.setAttribute('draggable','true');
+    td.addEventListener('click',()=>{ if(!SWAP_SEL) menuSwap(w,i,d); });
+    td.addEventListener('dragstart',e=>{ e.dataTransfer.effectAllowed='move';
+      e.dataTransfer.setData('text/plain','x'); swapDragStart(td,w,i,d); });
+    td.addEventListener('dragend',swapDragEnd);
+    td.addEventListener('dragover',e=>{ if(SWAP_SEL) e.preventDefault(); });
+    td.addEventListener('drop',e=>{ e.preventDefault(); swapDrop(w,i,d); });
+  });
+}
+
 // Plan que le corresponde a cada semana del mes
 function posSemana(w){
   if(!RESULTADO) return [];
@@ -1690,7 +2012,7 @@ function renderIdealConfig(){
     // cobertura del escenario
     const cov = Array.from({length:7},()=>new Array(48).fill(0));
     for(const q of pos) for(const a of q.asig)
-      for(let s=a.e; s<a.e+a.pres; s++) cov[a.d][((s%48)+48)%48]++;
+      for(const s of slotsCub(a)) cov[a.d][((s%48)+48)%48]++;
     const porHora = {};
     for(let dd=0; dd<7; dd++) for(let s=0; s<48; s++){
       const f = req[dd][s]-cov[dd][s];
@@ -1760,14 +2082,27 @@ function renderIdealConfig(){
   if(_ultimoPiso !== null && esHoy){
     pie += `<div class="okbanner" style="margin-top:10px">Listo: dejé <b>${nFTact} FT + ${nPTact} PT</b> cargados en <b>Mi equipo</b> y el horario ya está armado en la pestaña <b>Horarios</b>. Si querés ajustar condiciones, día libre o sector de alguien, hacelo en la tabla y volvé a tocar <b>Generar horario</b>.</div>`;
   }
+  if(!esHoy && PISO_ESC !== null){
+    pie += `<div class="box" style="margin-top:12px; border-color:var(--accent); background:var(--accent-soft)">
+      <b>Esto es un escenario, no tu equipo.</b> Está calculado de cero con la demanda del local: no toca <b>Mi equipo</b> ni el horario que ya generaste.
+      Si querés adoptarlo, tocá el botón y te lo dejo cargado en la tabla.
+      <div style="margin-top:9px; display:flex; gap:9px; flex-wrap:wrap; align-items:center">
+        <button class="btn mini" id="btnAdoptar" style="background:var(--accent); color:#fff; border-color:var(--accent); font-weight:700">Cargar esta dotación en Mi equipo</button>
+        <a href="#" id="volverHoy2" class="small">Volver a mi equipo</a>
+      </div></div>`;
+  }
   pie += `<div style="margin-top:10px; font-size:14px; line-height:1.55">
-      <b>¿Se te fue alguien?</b> Poné arriba cuántos full time te quedan y tocá <b>Recalcular</b>: armo la dotación que hace falta, te la dejo cargada en <b>Mi equipo</b> y genero el horario.</div>`;
+      <b>¿Se te fue alguien?</b> Poné arriba cuántos full time te quedan y tocá <b>Recalcular</b>: te muestro qué dotación haría falta. <b>No te cambia nada</b> hasta que lo adoptes vos.</div>`;
 
   el.innerHTML = cards + pie;
   sincronizarPiso();   // el campo queda alineado con lo que se está mostrando
 
   const v = document.getElementById('volverHoy');
   if(v) v.addEventListener('click', ev=>{ ev.preventDefault(); PISO_ESC=null; sincronizarPiso(true); renderIdealConfig(); });
+  const v2 = document.getElementById('volverHoy2');
+  if(v2) v2.addEventListener('click', ev=>{ ev.preventDefault(); PISO_ESC=null; sincronizarPiso(true); renderIdealConfig(); });
+  const ad = document.getElementById('btnAdoptar');
+  if(ad) ad.addEventListener('click', adoptarDotacion);
 }
 
 
@@ -1946,6 +2281,22 @@ function diaSlot(d, s){ return [(d + Math.floor(s/48)) % 7, ((s % 48) + 48) % 48
 // Hasta dónde puede estirarse un turno que entra el día d. Sólo se cruza la
 // medianoche si el local cierra a las 24:00 y el día siguiente abre a las 00:00,
 // es decir si nunca cerró.
+// ---------- hasta dónde puede llegar el turno de una persona ----------
+// En un local que nunca cierra, un full time normal puede entrar de noche y salir
+// a la mañana siguiente. Hasta la 6.64 no podía: su ventana terminaba a las 24:00
+// y sólo la condición Nocturno llegaba más allá. Esa era la causa real de que el
+// nocturno no tuviera reemplazo el día de su franco — no es que el motor no lo
+// buscara, es que nadie más estaba habilitado a estar ahí.
+// Medido en los 47 locales 24 h: la madrugada sin cubrir baja de 1.026 a 653 h/mes,
+// las noches con un momento en cero cajeros de 1.019 a 723 (de 1.645), y las horas
+// sin cubrir del día entero de 3.002 a 2.627, con el costo +0,4% por el recargo.
+const SALIDA_NOCHE = 60;     // 06:00 del día siguiente
+function hastaEf(emp){
+  if(!emp) return 48;
+  const ct = CONTRATOS[emp.contrato];
+  if(ct && ct.tipo==='FT' && emp.cond!=='Nocturno' && es24() && emp.hasta>=48) return SALIDA_NOCHE;
+  return emp.hasta;
+}
 function cierreExt(d, opd, cld){
   const dn = (d+1)%7;
   return (cld[d] >= 48 && opd[dn] <= 0) ? 48 + cld[dn] : cld[d];
@@ -1959,6 +2310,34 @@ const MIN_ABIERTO = 1;
 const EXIGIR_SECTORES = true;
 
 const PRESENCIA = {8:8, 10:11, 12:13, 14:15, 16:18};
+// ───────────────────────────────────────────────────────────────────────────
+// LA HORA DE DESCANSO  (v6.68)
+// Un turno corrido de full time son 9 hs de presencia: 8 de trabajo + 1 de
+// descanso. Durante esa hora la persona está en el local pero NO está en la
+// caja, así que NO cubre demanda. Hasta la 6.59 el motor contaba las 9 hs como
+// cobertura: le regalaba al turno corrido una hora que no existe. Eso además
+// dejaba al turno cortado (dos bloques de 4 hs, sin descanso, 8 hs reales)
+// perdiendo 9 a 8 contra el corrido al mismo costo, y por eso nunca ganaba.
+// a.desc = media hora en la que arranca el descanso. Sin a.desc no hay descanso:
+// part time y los bloques de 4 hs de un turno cortado.
+// largoDesc: cuántas medias horas dura el receso de ese turno. Sale solo de la
+// diferencia entre presencia y trabajo: 2 en el corrido de full time (1 hora),
+// 1 en los bloques de part time de 5 a 7 horas (media hora), 0 en los de 4.
+function largoDesc(a){ return Math.max(0, a.pres - a.len); }
+function enDesc(a,s){ return a.desc!==undefined && s>=a.desc && s<a.desc+largoDesc(a); }
+function slotsCub(a){ const o=[]; for(let s=a.e;s<a.e+a.pres;s++) if(!enDesc(a,s)) o.push(s); return o; }
+function textoDesc(a){ return a.desc===undefined ? '' : slotToHM(a.desc)+'–'+slotToHM(a.desc+largoDesc(a)); }
+// Dónde puede caer: nunca en las primeras 3 hs del turno ni en las últimas 2.
+const DESC_MIN = 6, DESC_FIN = 4;
+// Turnos cortados para todo el equipo de una, sin tildar persona por persona.
+// Tope de jornadas partidas por persona y por semana. No es configurable a
+// propósito: es una regla de la empresa, como las 12 hs de descanso entre
+// jornadas. Sin tope, el motor le parte el día a la misma persona todos los
+// días del mes si eso cubre mejor — medido en los 92 locales, pasaba en 11 de
+// ellos, con casos de 30 jornadas partidas sobre 30 días trabajados. Con el
+// tope en 3 eso desaparece y cuesta 22 horas de cobertura al mes en toda la
+// cadena (el 0,5%).
+const TOPE_CORTE = 3;
 const LARGOS_PT = [8,10,12,14,16];
 const VENT = { medit:[14,40], canasta:[12,40], parr:[14,28] };
 const ESTADOS = ['Activo','Vacaciones','Suspendido','Licencia médica','Reposo','Baja','Otro'];
@@ -2047,7 +2426,7 @@ function huellaIdeal(){
     .map(id => (document.getElementById(id)||{}).value || '').join('|');
   const fer = FERIADOS ? FERIADOS.map(f=>f.map(v=>v?1:0).join('')).join('') : '';
   const ev  = JSON.stringify(EVENTOS||[]);
-  return [loc, MES_SEL, ANIO_SEL, cts, ROTATIVO?'R':'-', hs, fer, ev].join('§');
+  return [loc, MES_SEL, ANIO_SEL, cts, ROTATIVO?'R':'-', hs, (ABIERTO24?'24':'-'), fer, ev].join('§');
 }
 
 // Único lugar donde se arma el mix ideal. Devuelve el plan que le toca a la
@@ -2093,26 +2472,60 @@ function costoEquipoActual(){
 }
 function nombrePos(p){ return CONTRATOS[p.nombre]?.tipo==='FT' ? 'FT · 48h' : p.nombre; }
 
+// ¿este local se está dimensionando abierto las 24 horas? Antes era un dato fijo
+// del export (local.is24) que nadie podía discutir. Ahora es una DECLARACIÓN del
+// gerente: el dato fijo sólo decide cómo arranca la casilla.
+let ABIERTO24 = false;
+function es24(){ return ABIERTO24; }
+
+// Habilita o bloquea las casillas según la declaración.
+function aplicar24(){
+  for(const id of ['lsOpen','lsClose','doOpen','doClose']){
+    const el=document.getElementById(id); if(el) el.disabled = ABIERTO24;
+  }
+  const n=document.getElementById('h24note'); if(n) n.style.display = ABIERTO24 ? '' : 'none';
+  const c=document.getElementById('chk24');  if(c) c.checked = ABIERTO24;
+}
+
 function cargarHorarios(local){
   const o=Math.round(local.open*2), c=Math.round(local.close*2);
-  const dis=local.is24;
-  for(const id of ['lsOpen','lsClose','doOpen','doClose']) document.getElementById(id).disabled=dis;
-  document.getElementById('h24note').style.display = dis?'':'none';
-  if(dis) return;
-  document.getElementById('lsOpen').value=slotToInput(o);
-  document.getElementById('lsClose').value=slotToInput(c);
-  document.getElementById('doOpen').value=slotToInput(o);
-  document.getElementById('doClose').value=slotToInput(Math.max(o+2,c-1));
+  ABIERTO24 = !!local.is24;                       // arranca con lo que dice el dato
+  const box=document.getElementById('box24');
+  if(box) box.style.display = local.is24 ? '' : 'none';
+  if(local.is24){
+    // 00:00 a 00:00 es el día completo: destildar la casilla, por sí solo, no
+    // cambia la dotación. Recién cambia cuando el gerente escribe su horario.
+    document.getElementById('lsOpen').value=slotToInput(0);
+    document.getElementById('lsClose').value=slotToInput(0);
+    document.getElementById('doOpen').value=slotToInput(0);
+    document.getElementById('doClose').value=slotToInput(0);
+  } else {
+    document.getElementById('lsOpen').value=slotToInput(o);
+    document.getElementById('lsClose').value=slotToInput(c);
+    document.getElementById('doOpen').value=slotToInput(o);
+    document.getElementById('doClose').value=slotToInput(Math.max(o+2,c-1));
+  }
+  aplicar24();
 }
 function horariosDia(local){
-  if(local.is24) return {opd:new Array(7).fill(0), cld:new Array(7).fill(48)};
+  if(es24()) return {opd:new Array(7).fill(0), cld:new Array(7).fill(48)};
   const lo=hmToSlot(document.getElementById('lsOpen').value)??Math.round(local.open*2);
-  const lc=hmToSlot(document.getElementById('lsClose').value)??Math.round(local.close*2);
+  let   lc=hmToSlot(document.getElementById('lsClose').value)??Math.round(local.close*2);
   const so=hmToSlot(document.getElementById('doOpen').value)??lo;
-  const sc=hmToSlot(document.getElementById('doClose').value)??lc;
+  let   sc=hmToSlot(document.getElementById('doClose').value)??lc;
+  // Cerrar a las 00:00 es cerrar al final del día, no a las cero horas. Antes un
+  // local que cerraba a medianoche no se podía expresar.
+  if(lc<=lo) lc=48;
+  if(sc<=so) sc=48;
   const opd=[],cld=[];
   for(let d=0;d<7;d++){opd.push(d===6?so:lo); cld.push(d===6?sc:lc);}
   return {opd,cld};
+}
+
+// Ventana de disponibilidad por defecto de una persona: el horario declarado.
+function ventanaLocal(local){
+  const h = horariosDia(local);
+  return {o: Math.min(...h.opd), cl: Math.max(...h.cld)};
 }
 
 // ---------- demanda por semana ----------
@@ -2120,7 +2533,7 @@ function horariosDia(local){
 // días marcados como feriado, que abren con el horario de "Dom y feriados".
 function horariosDiaSemana(local, w){
   const base=horariosDia(local);
-  if(local.is24 || !FERIADOS[w].some(v=>v)) return base;
+  if(es24() || !FERIADOS[w].some(v=>v)) return base;
   const so=hmToSlot(document.getElementById('doOpen').value)??base.opd[6];
   const sc=hmToSlot(document.getElementById('doClose').value)??base.cld[6];
   const opd=base.opd.slice(), cld=base.cld.slice();
@@ -2211,21 +2624,55 @@ function asignarEquipo(local){
     reqProm[d][s]=Math.round(v/ws.length*100)/100;
   }
   let residual=null;   // se arma dentro de construir(), un plan a la vez
+  // Cuántas noches del nocturno lleva cubiertas cada persona en todo el mes. Sirve
+  // para que el reemplazo no caiga siempre sobre el mismo: entre los que pueden,
+  // le toca al que menos lleva.
+  const REEMP_MES={};
+  // Cuánta gente tiene ya su receso en cada media hora. Sirve para escalonarlos:
+  // si tres personas pueden descansar en la misma franja sin perder cobertura,
+  // igual conviene repartirlos, porque si no la caja queda vacía a esa hora.
+  let DESC_OCU=null;
+  function ocupado(d,b,n){ let t=0; for(let s=b;s<b+n;s++){ const [dd,ss]=diaSlot(d,s); t+=DESC_OCU[dd][ss]; } return t; }
+  function marcarDesc(a){ const n=Math.max(0,a.pres-a.len); if(a.desc===undefined||!n) return;
+    for(let s=a.desc;s<a.desc+n;s++){ const [dd,ss]=diaSlot(a.d,s); DESC_OCU[dd][ss]++; } }
+  // Turnos que esta persona tiene en el plan base. Se usa para que un full time
+  // no se mueva porque sí: entre dos opciones que cubren igual, gana quedarse.
+  let ANCLA=null;
+  const BON=0.1;       // 6 días x 0.1 < 1 slot de cobertura: sólo desempata
   const openG=Math.min(...opd), closeG=Math.max(...cld);
   // el más tardío de los cierres extendidos: hasta acá puede llegar un turno
   const closeExt=Math.max(...[0,1,2,3,4,5,6].map(d=>cierreExt(d,opd,cld)));
 
+  // Dónde conviene poner el receso de un turno que arranca en `e` y dura `P`
+  // medias horas, con `n` medias horas de receso: en la franja más floja de
+  // adentro, nunca pegado a la entrada ni a la salida.
+  let DESC_PT = {};
+  function ubicarDesc(d,e,P,n){
+    if(n<=0) return undefined;
+    let lo=e+DESC_MIN, hi=e+P-DESC_FIN-n;
+    if(hi<lo){ lo=e+Math.max(1,Math.floor((P-n)/2)); hi=lo; }
+    let bd=lo, bp=0, bs=1e9; const mid=e+(P-n)/2;
+    for(let b=lo;b<=hi;b++){
+      let q=0; for(let s=b;s<b+n;s++){ const [dd,ss]=diaSlot(d,s); if(residual[dd][ss]>0) q++; }
+      const sc=q*1000+ocupado(d,b,n)*100+Math.abs(b-mid);
+      if(sc<bs){bs=sc;bp=q;bd=b;}
+    }
+    return {b:bd, p:bp};
+  }
   function covCurve(emp,d,e){
     const out={};
     for(const L of LARGOS_PT){
       const P=PRESENCIA[L];
       if(e<opd[d]||e+P>cierreExt(d,opd,cld)||e<emp.desde||e+P>emp.hasta){out[L]=-1;continue;}
       let c=0; for(let s=e;s<e+P;s++){ const [dd,ss]=diaSlot(d,s); if(residual[dd][ss]>0) c++; }
-      out[L]=c;
+      const u=ubicarDesc(d,e,P,P-L);
+      if(u){ c-=u.p; DESC_PT[d+'|'+e+'|'+L]=u.b; }
+      out[L]=c + ((ANCLA && ANCLA.has(d+'|'+e+'|'+L)) ? BON : 0);
     }
     return out;
   }
   function mejorPT(emp, e, targetSlots, diasExactos){
+    DESC_PT={};
     const curves=[]; for(let d=0;d<7;d++) curves.push(emp.dias[d]?covCurve(emp,d,e):null);
     const NEG=-1e9;
     let dp=Array.from({length:targetSlots+1},()=>new Array(7).fill(NEG));
@@ -2257,11 +2704,20 @@ function asignarEquipo(local){
     const asig=[]; let u=targetSlots,k=bk;
     for(let d=7;d>=1;d--){
       const L=parent[d][u][k];
-      if(L>0){asig.push({d:d-1,e,len:L,pres:PRESENCIA[L]});u-=L;k--;}
+      if(L>0){
+        const _d=d-1, _b=DESC_PT[_d+'|'+e+'|'+L];
+        const _a={d:_d,e,len:L,pres:PRESENCIA[L]};
+        if(_b!==undefined) _a.desc=_b;
+        asig.push(_a);u-=L;k--;
+      }
     }
     return {cov:Math.max(best,0), asig};
   }
-  function mejorFT(emp){
+  // forz = {d, e} : esa persona TIENE que hacer ese turno ese día. Se usa para el
+  // reemplazo del nocturno que está de franco: la noche no se negocia contra la
+  // cobertura del día, es una obligación. El resto de su semana se optimiza
+  // alrededor de ese turno, respetando las 12 hs de descanso.
+  function mejorFT(emp, forz){
     const J=jornadaFT(emp), P=J.pres, LEN=J.len;
     // en jornada reducida no se parte el turno: el sentido de la reducción es que
     // la persona esté menos tiempo en el local, no que venga dos veces por día
@@ -2272,11 +2728,40 @@ function asignarEquipo(local){
     const ops=[];
     for(let d=0;d<7;d++){
       const lista=[];
+      if(forz && forz.d===d){
+        // Jornada NOCTURNA: 7 hs de trabajo, 8 de presencia. Es la misma que hace
+        // el nocturno titular, porque el tope de 7 hs es de la jornada y no de la
+        // persona: el turno cae entero dentro del tramo nocturno. Las 7 hs se
+        // pagan como 8, así que su semana sigue siendo de 48 hs pagadas.
+        const PN=JORNADA_NOC.pres, LN=JORNADA_NOC.len;
+        if(!emp.dias[d]) return null;
+        if(forz.e < Math.max(opd[d],emp.desde) || forz.e+PN > Math.min(cierreExt(d,opd,cld),hastaEf(emp))) return null;
+        let c=0; for(let s=forz.e;s<forz.e+PN;s++){ const [dd,ss]=diaSlot(d,s); if(residual[dd][ss]>0) c++; }
+        let bd=forz.e+DESC_MIN, bp=0, bs=1e9; const _m=forz.e+(PN-2)/2;
+        for(let b=forz.e+DESC_MIN; b+2<=forz.e+PN-DESC_FIN; b++){
+          let q=0; for(let s=b;s<b+2;s++){ const [dd,ss]=diaSlot(d,s); if(residual[dd][ss]>0) q++; }
+          const sc=q*1000+ocupado(d,b,2)+Math.abs(b-_m);
+          if(sc<bs){bs=sc;bp=q;bd=b;}
+        }
+        lista.push({entry:forz.e, exit:forz.e+PN, cov:c-bp, split:null, desc:bd, noc:true, pres:PN, len:LN});
+        ops.push(lista); continue;
+      }
       if(emp.dias[d]){
-        const lo=Math.max(opd[d],emp.desde), hi=Math.min(cierreExt(d,opd,cld),emp.hasta);
+        const lo=Math.max(opd[d],emp.desde), hi=Math.min(cierreExt(d,opd,cld),hastaEf(emp));
         for(let e=lo; e+P<=hi; e++){
           let c=0; for(let s=e;s<e+P;s++){ const [dd,ss]=diaSlot(d,s); if(residual[dd][ss]>0) c++; }
-          lista.push({entry:e, exit:e+P, cov:c, split:null});
+          // el descanso va en la hora más floja de adentro del turno: se pierde lo
+          // menos posible, pero se pierde. Es la hora que la persona no está en caja.
+          let bd=-1, bp=0, bs=1e9; const _mid=e+(P-2)/2;
+          for(let b=e+DESC_MIN; b+2<=e+P-DESC_FIN; b++){
+            let q=0; for(let s=b;s<b+2;s++){ const [dd,ss]=diaSlot(d,s); if(residual[dd][ss]>0) q++; }
+            // primero el que menos cobertura cuesta; si empatan, el más cercano
+            // al medio del turno, que es donde un receso tiene sentido
+            const sc=q*1000+ocupado(d,b,2)*100+Math.abs(b-_mid);
+            if(sc<bs){bs=sc;bp=q;bd=b;}
+          }
+          if(bd<0){ bd=e+DESC_MIN; bp=0; }
+          lista.push({entry:e, exit:e+P, cov:c-bp + ((ANCLA && ANCLA.has(d+'|'+e)) ? BON : 0), split:null, desc:bd});
         }
         if(permitirCorte){
           for(let e1=lo; e1+8<=hi; e1++){
@@ -2297,38 +2782,51 @@ function asignarEquipo(local){
     let best=null;
     // franco = día sin trabajar; la cadena arranca después del franco y da la vuelta,
     // así el descanso de 12 hs se controla también en el salto de semana (dom→lun)
-    const francos = diasTrab.length>=7 ? [0,1,2,3,4,5,6] : [0,1,2,3,4,5,6].filter(d=>!diasTrab.includes(d));
+    let francos = diasTrab.length>=7 ? [0,1,2,3,4,5,6] : [0,1,2,3,4,5,6].filter(d=>!diasTrab.includes(d));
+    // El turno forzado no puede caer en el franco: si no, el DP lo descarta —
+    // una noche cubre casi nada de demanda— y el reemplazo se pierde en silencio.
+    if(forz) francos = francos.filter(d=>d!==forz.d);
+    if(!francos.length) return null;
     for(const f of francos){
       const dias6=[];
       for(let k=1;k<7;k++){ const d=(f+k)%7; if(d!==f && diasTrab.includes(d)) dias6.push(d); }
       dias6.length=Math.min(dias6.length,6);
       if(!dias6.length) continue;
-      let cur=ops[dias6[0]].map(o=>o.cov);
-      const parents=[ops[dias6[0]].map(()=>-1)];
+      // El estado del DP ya no es sólo "qué turno hizo ayer": es "qué turno hizo
+      // ayer y cuántas jornadas partidas lleva en la semana". Así el tope entra
+      // en la optimización misma y no como un recorte posterior, que sería peor:
+      // recortando después se cae la jornada partida que más cubría.
+      const NC=TOPE_CORTE+1;
+      const sumaC=(c,o)=> o.split===null ? c : c+1;
+      let cur=Array.from({length:NC},()=>ops[dias6[0]].map(()=>-1e9));
+      ops[dias6[0]].forEach((o,j)=>{ const c=sumaC(0,o); if(c<NC && o.cov>cur[c][j]) cur[c][j]=o.cov; });
+      const parents=[Array.from({length:NC},()=>ops[dias6[0]].map(()=>-1))];
       for(let k=1;k<dias6.length;k++){
         const d=dias6[k], prevD=dias6[k-1];
         const consecutivos=((prevD+1)%7)===d;
-        const nxt=ops[d].map(()=>-1e9), pr=ops[d].map(()=>-1);
-        for(let i=0;i<ops[prevD].length;i++){
-          if(cur[i]<=-1e8) continue;
+        const nxt=Array.from({length:NC},()=>ops[d].map(()=>-1e9));
+        const pr =Array.from({length:NC},()=>ops[d].map(()=>-1));
+        for(let c=0;c<NC;c++) for(let i=0;i<ops[prevD].length;i++){
+          if(cur[c][i]<=-1e8) continue;
           for(let j=0;j<ops[d].length;j++){
             if(consecutivos && ops[d][j].entry+48-ops[prevD][i].exit<24) continue; // v4.2: descanso 12 hs
-            const v=cur[i]+ops[d][j].cov;
-            if(v>nxt[j]){nxt[j]=v; pr[j]=i;}
+            const c2=sumaC(c, ops[d][j]); if(c2>=NC) continue;
+            const v=cur[c][i]+ops[d][j].cov;
+            if(v>nxt[c2][j]){nxt[c2][j]=v; pr[c2][j]=c*1000+i;}
           }
         }
         cur=nxt; parents.push(pr);
       }
-      let bi=-1,bv=-1e9;
-      for(let i=0;i<cur.length;i++) if(cur[i]>bv){bv=cur[i];bi=i;}
+      let bi=-1,bc=-1,bv=-1e9;
+      for(let c=0;c<NC;c++) for(let i=0;i<cur[c].length;i++) if(cur[c][i]>bv){bv=cur[c][i];bi=i;bc=c;}
       if(bi<0||bv<=-1e6) continue;
       if(!best||bv>best.cov){
-        const idx=[]; let i=bi;
-        for(let k=dias6.length-1;k>=0;k--){idx[k]=i;i=parents[k][i];}
+        const idx=[]; let i=bi, c=bc;
+        for(let k=dias6.length-1;k>=0;k--){ idx[k]=i; const pp=parents[k][c][i]; i=pp%1000; c=Math.floor(pp/1000); }
         const asig=[];
         dias6.forEach((d,k)=>{
           const o=ops[d][idx[k]];
-          if(o.split===null) asig.push({d,e:o.entry,len:LEN,pres:P});
+          if(o.split===null) asig.push(Object.assign({d, e:o.entry, len:(o.len||LEN), pres:(o.pres||P), desc:o.desc}, o.noc?{reemplazoNoc:true}:{}));
           else{ asig.push({d,e:o.entry,len:8,pres:8,corte:1}); asig.push({d,e:o.split,len:8,pres:8,corte:2}); }
         });
         best={cov:Math.max(bv,0), asig};
@@ -2340,23 +2838,135 @@ function asignarEquipo(local){
   // ordenar: FT primero, luego PT grandes
   const orden=[...EQUIPO.keys()].sort((a,b)=>{
     const ca=CONTRATOS[EQUIPO[a].contrato], cb=CONTRATOS[EQUIPO[b].contrato];
-    return (ca.tipo==='FT'?0:1)-(cb.tipo==='FT'?0:1) || cb.horas-ca.horas;
+    // Dentro de los full time, los que pueden hacer turno cortado van ULTIMOS.
+    // Un turno partido solo rinde cuando ya hay gente cubriendo el medio del dia:
+    // si la persona marcada se coloca primera, el motor le da un turno corrido y
+    // la casilla no hace nada, que es justo lo que el supervisor no entenderia.
+    // Los nocturnos van primero: recién cuando están colocados se sabe qué día
+    // les toca el franco, y es esa noche la que hay que hacer cubrir por otro.
+    const na=(EQUIPO[a].cond==='Nocturno')?0:1, nb=(EQUIPO[b].cond==='Nocturno')?0:1;
+    return (ca.tipo==='FT'?0:1)-(cb.tipo==='FT'?0:1)
+        || (na-nb)
+        || ((EQUIPO[a].cortado?1:0)-(EQUIPO[b].cortado?1:0))
+        || cb.horas-ca.horas;
   });
   // Arma un plan completo de la semana tipo con la gente presente que se le pase.
   // El residual se reinicia en cada plan, así que cada combinación se optimiza
   // desde cero: el equipo que queda se reparte el hueco del que no está.
-  function construir(presentes){
-  residual = reqProm.map(r=>r.map(v=>Math.round(v)));
+  // construir(presentes, reqObj, base)
+  //   reqObj : la demanda contra la que se arma (la de esa semana, o la promedio)
+  //   base   : plan de referencia. Con base, los PART TIME conservan exactamente
+  //            su horario —es el de su contrato— y se descuentan ANTES de que los
+  //            full time elijan; los full time se reacomodan sobre lo que queda.
+  function construir(presentes, reqObj, base, wk){
+  residual = (reqObj||reqProm).map(r=>r.map(v=>Math.round(v)));
+  DESC_OCU = Array.from({length:7},()=>new Array(48).fill(0));
+  const FIJO={}, ANC={};
+  // Horario de contrato declarado por el gerente. No se optimiza: se coloca tal
+  // cual, en el lugar que le toca dentro del orden, para que el resultado no
+  // cambie por el orden en que se procesa la gente.
+  const DECL={};
+  EQUIPO.forEach((e,i)=>{ if(e && e.fijo && e.fijo.length) DECL[i]=e.fijo; });
+  if(base) for(const q of base){
+    const e0=EQUIPO[q.emp]; if(!e0) continue;
+    if(CONTRATOS[e0.contrato].tipo==='PT') FIJO[q.emp]=q.asig;
+    else { const S=new Set(); for(const a of q.asig) S.add(a.d+'|'+a.e); ANC[q.emp]=S; }
+  }
+  for(const i of Object.keys(FIJO)){
+    if(!presentes[i]) continue;
+    for(const a of FIJO[i]){ marcarDesc(a); for(const s of slotsCub(a)){
+      const [dd,ss]=diaSlot(a.d,s); if(residual[dd][ss]>0) residual[dd][ss]--; } }
+  }
   const pos=[];
+  // Noches del nocturno que quedan sin dueño por su día libre. Se llenan a medida
+  // que se van colocando los nocturnos, y se reparten entre los full time normales
+  // que vienen después, uno por persona para que no caiga siempre sobre el mismo.
+  const NOCHES=[]; const YA_REEMP={}; let PLAN_REEMP=null;
+  // Reparte las noches vacantes entre los full time normales: primero los que
+  // menos reemplazos llevan en el mes, y a igualdad se arranca en un punto
+  // distinto según la semana, para que no sea siempre el mismo de la lista.
+  function candidatosReemp(desde){
+    const cands=[];
+    for(const j of orden){
+      if(desde!==undefined && orden.indexOf(j)<desde) continue;
+      const e=EQUIPO[j]; if(!e || !presentes[j]) continue;
+      const c=CONTRATOS[e.contrato];
+      if(c.tipo!=='FT' || e.cond==='Nocturno' || tieneFijo(e) || etapaMat(e)) continue;
+      cands.push(j);
+    }
+    return cands;
+  }
+  // Le da cada noche al que menos reemplazos lleva en el mes; a igualdad, se
+  // arranca en un punto distinto de la lista según la semana.
+  function elegirPara(n, mapa, desde){
+    const cands=candidatosReemp(desde);
+    if(!cands.length) return -1;
+    const off=((wk||0) % cands.length);
+    const rot=cands.slice(off).concat(cands.slice(0,off));
+    let mejor=-1, mv=1e9;
+    for(const j of rot){
+      if(mapa[j]!==undefined) continue;
+      if(!EQUIPO[j].dias[n.d]) continue;
+      const v=(REEMP_MES[j]||0);
+      if(v<mv){ mv=v; mejor=j; }
+    }
+    return mejor;
+  }
+  function repartirNoches(){
+    const mapa={};
+    for(const n of NOCHES){ const j=elegirPara(n, mapa); if(j>=0) mapa[j]=n; }
+    return mapa;
+  }
+  function noches_de(q, emp){
+    if(!q || !q.asig.length) return;
+    const cuenta={}; for(const a of q.asig) cuenta[a.e]=(cuenta[a.e]||0)+1;
+    const e0=+Object.keys(cuenta).sort((x,y)=>cuenta[y]-cuenta[x])[0];
+    const trab=new Set(q.asig.map(a=>a.d));
+    for(let d=0;d<7;d++) if(!trab.has(d)) NOCHES.push({d, e:e0});
+  }
   for(const i of orden){
     const emp=EQUIPO[i];
+    ANCLA = ANC[i] || null;
     const ct=CONTRATOS[emp.contrato];
+    if(DECL[i] && presentes[i]){
+      const _as = DECL[i].map(a=>Object.assign({pres:PRESENCIA[a.len]}, a));
+      for(const a of _as){ marcarDesc(a); for(const s of slotsCub(a)){
+        const [dd,ss]=diaSlot(a.d,s); if(residual[dd][ss]>0) residual[dd][ss]--; } }
+      pos.push({emp:i, nombre:emp.nombre, ct, contrato:emp.contrato,
+                asig:_as, sinHorario:false, declarado:true});
+      continue;
+    }
+    if(base && FIJO[i] && presentes[i]){
+      pos.push({emp:i, nombre:emp.nombre, ct, contrato:emp.contrato,
+                asig:FIJO[i].map(a=>Object.assign({},a)), sinHorario:!FIJO[i].length});
+      continue;
+    }
     if(!presentes[i]){
       pos.push({emp:i, nombre:emp.nombre, ct, contrato:emp.contrato, asig:[], sinHorario:false, ausente:emp.estado||'Ausente'});
       continue;
     }
     let r=null;
-    if(ct.tipo==='FT') r=mejorFT(emp);
+    if(ct.tipo==='FT'){
+      // ¿le toca cubrir una noche del nocturno?
+      let tomo=null;
+      if(emp.cond!=='Nocturno' && NOCHES.length && !YA_REEMP[i]){
+        if(PLAN_REEMP===null) PLAN_REEMP=repartirNoches();
+        const propia=PLAN_REEMP[i];
+        if(propia && NOCHES.indexOf(propia)>=0 && emp.dias[propia.d]){
+          const cand=mejorFT(emp, propia);
+          if(cand && cand.asig.some(a=>a.d===propia.d && a.e===propia.e)){ r=cand; tomo=propia; }
+          else {
+            // a esta persona no le entra: la noche pasa al siguiente que pueda
+            delete PLAN_REEMP[i];
+            const j=elegirPara(propia, PLAN_REEMP, orden.indexOf(i)+1);
+            if(j>=0) PLAN_REEMP[j]=propia;
+          }
+        }
+      }
+      if(tomo){ NOCHES.splice(NOCHES.indexOf(tomo),1); YA_REEMP[i]=1; REEMP_MES[i]=(REEMP_MES[i]||0)+1; }
+      else r=mejorFT(emp);
+      if(emp.cond==='Nocturno' && r) noches_de({asig:r.asig}, emp);
+    }
     else{
       const target=ct.horas*2;
       // primero se intenta con la cantidad de días del contrato (un solo día libre);
@@ -2372,7 +2982,7 @@ function asignarEquipo(local){
       }
     }
     if(r){
-      for(const a of r.asig) for(let s=a.e;s<a.e+a.pres;s++){ const [dd,ss]=diaSlot(a.d,s); if(residual[dd][ss]>0) residual[dd][ss]--; }
+      for(const a of r.asig){ marcarDesc(a); for(const s of slotsCub(a)){ const [dd,ss]=diaSlot(a.d,s); if(residual[dd][ss]>0) residual[dd][ss]--; } }
       pos.push({emp:i, nombre:emp.nombre, ct, contrato:emp.contrato, asig:r.asig, sinHorario:false});
     } else {
       pos.push({emp:i, nombre:emp.nombre, ct, contrato:emp.contrato, asig:[], sinHorario:true});
@@ -2386,9 +2996,27 @@ function asignarEquipo(local){
   const presSem = Array.from({length:nSem()},(_,w) => EQUIPO.map(e => presenteSem(e, w)));
   const firmas  = presSem.map(a => a.map(v=>v?'1':'0').join(''));
   const bases = {};
+  // Horas de demanda que un plan deja sin cubrir en la semana w. Es el juez que
+  // decide si el reacomodo de los full time se adopta o se descarta.
+  function faltaPlan(pos, w){
+    const cov=Array.from({length:7},()=>new Array(48).fill(0));
+    for(const q of pos) for(const a of q.asig)
+      for(const s of slotsCub(a)){ const [dd,ss]=diaSlot(a.d,s); cov[dd][ss]++; }
+    let f=0; for(let d=0;d<7;d++) for(let s=0;s<48;s++){
+      const v=Math.round(reqSem[w][d][s])-cov[d][s]; if(v>0) f+=v; }
+    return f;
+  }
+  // Plan de referencia: el de siempre, contra la semana promedio. De acá salen
+  // los horarios fijos de los part time y el ancla de los full time.
+  const PLAN_BASE = construir(presSem[0]);
   function baseDe(w){
-    const f = firmas[w];
-    if(!bases[f]) bases[f] = {pos: construir(presSem[w]), rot: undefined};
+    const f = w+'#'+firmas[w];
+    if(!bases[f]){
+      const plano = construir(presSem[w], null, null, w);               // el de hoy
+      const ajust = construir(presSem[w], reqSem[w], PLAN_BASE, w);     // FT reacomodados
+      bases[f] = {pos: (faltaPlan(ajust,w) < faltaPlan(plano,w)) ? ajust : plano,
+                  rot: undefined};
+    }
     return bases[f];
   }
 
@@ -2918,7 +3546,7 @@ function coberturaSemana(pos, w){
     for(const a of p.asig){
       if(eq && diaAusente(eq, w, a.d)) continue;      // vacaciones / licencia / reposo
       const falta=faltaDe(p.emp, w, a.d);
-      for(let s=a.e;s<a.e+a.pres;s++){
+      for(const s of slotsCub(a)){
         if(falta && s>=falta.desde && s<falta.hasta) continue;
         const [dd,ss]=diaSlot(a.d,s); cov[dd][ss]++;
       }
@@ -3131,7 +3759,7 @@ function renderHorarios(){
       const pi = idealDeSemana(w, opd, cld, local);
       covProd = Array.from({length:7},()=>new Array(48).fill(0));
       for(const q of pi) for(const a of q.asig)
-        for(let s=a.e; s<a.e+a.pres; s++) covProd[a.d][((s%48)+48)%48]++;
+        for(const s of slotsCub(a)) covProd[a.d][((s%48)+48)%48]++;
     }
     html+=renderProductividad(pos, covProd, opd, cld, local, w);
     out.innerHTML=html;
@@ -3154,12 +3782,22 @@ function renderHorarios(){
   // ---- grilla de horario ----
   const ferW=feriadosSemana(w);
   const rotOn = ROTATIVO && RESULTADO.posB;
-  html+=`<h2>Horario del equipo</h2>${rotOn?`<div class="small" style="margin-bottom:7px">Turnos rotativos activos: los full time se intercambian de a pares entre mañana y tarde. <b>Semanas 1 y 3</b> una vuelta, <b>semanas 2 y 4</b> la otra — estás viendo la <b>semana ${w+1}</b>. Los turnos del local son los mismos en las cuatro semanas; cambia quién los hace.</div>`:''}${ferW.length?`<div class="small" style="margin-bottom:7px; color:var(--gold); font-weight:600">Feriado en esta semana: ${ferW.map(d=>{const dt=fechaDe(w,d); const fn=nombreFeriado(dt); return DIAS_LARGO[d]+' '+diaMes(dt)+'/'+mesDe(dt)+(fn?' ('+fn+')':'');}).join(' · ')} — marcado con ★, con el horario de "Dom y feriados".</div>`:''}<div class="tablewrap" id="hGrilla"><table><thead><tr><th>Persona</th>${DIAS.map((d,di)=>{
+  if(escenario==='actual'){
+    html+=`<h2>Horario del equipo</h2>
+      <div class="swbar">
+        <span class="small" style="flex:1; min-width:260px">¿Te queda mejor que dos full time se cambien el turno? <b>Tocá o arrastrá</b> una celda verde sobre otra del mismo día. La cobertura del local no cambia: son los mismos turnos, hechos por otra persona.</span>
+        <button class="btn mini" id="btnSwapUndo" ${SWAPS.length?'':'disabled'}>↶ Deshacer</button>
+        <button class="btn mini" id="btnSwapCero" ${SWAPS.length?'':'disabled'}>Volver al horario original</button>
+        <span class="small">${SWAPS.length? SWAPS.length+' intercambio'+(SWAPS.length>1?'s':'') : 'Sin cambios'}</span>
+      </div>
+      <div class="box" id="swAviso" style="display:none; margin-bottom:10px"></div>`;
+  } else html+=`<h2>Horario del equipo</h2>`;
+  html+=`${rotOn?`<div class="small" style="margin-bottom:7px">Turnos rotativos activos: los full time se intercambian de a pares entre mañana y tarde. <b>Semanas 1 y 3</b> una vuelta, <b>semanas 2 y 4</b> la otra — estás viendo la <b>semana ${w+1}</b>. Los turnos del local son los mismos en las cuatro semanas; cambia quién los hace.</div>`:''}${ferW.length?`<div class="small" style="margin-bottom:7px; color:var(--gold); font-weight:600">Feriado en esta semana: ${ferW.map(d=>{const dt=fechaDe(w,d); const fn=nombreFeriado(dt); return DIAS_LARGO[d]+' '+diaMes(dt)+'/'+mesDe(dt)+(fn?' ('+fn+')':'');}).join(' · ')} — marcado con ★, con el horario de "Dom y feriados".</div>`:''}<div class="tablewrap" id="hGrilla"><table><thead><tr><th>Persona</th>${DIAS.map((d,di)=>{
     const dt=fechaDe(w,di);
     const fuera = !esDelMes(dt);
-    return `<th${fuera?' style="opacity:.5" title="No es del mes elegido"':''}>${d} ${diaMes(dt)}/${mesDe(dt)}${ferW.includes(di)?' ★':''}</th>`;
+    return `<th data-d="${di}"${fuera?' style="opacity:.5" title="No es del mes elegido"':''}>${d} ${diaMes(dt)}/${mesDe(dt)}${ferW.includes(di)?' ★':''}</th>`;
   }).join('')}</tr></thead><tbody>`;
-  const ordenV=[...pos].sort((a,b)=>(a.ct.tipo==='FT'?0:1)-(b.ct.tipo==='FT'?0:1)||b.ct.horas-a.ct.horas);
+  const ordenV=[...pos].sort((a,b)=>a.emp-b.emp);
   for(const p of ordenV){
     const esFT=p.ct.tipo==='FT';
     const porDia=Array.from({length:7},()=>[]);
@@ -3173,16 +3811,19 @@ function renderHorarios(){
         html+=`<td class="franco" style="background:#f5f1e8; color:var(--gold); font-weight:600; text-align:center; font-size:10px; letter-spacing:.3px">${(EQUIPO[p.emp].estado||'Ausente').toUpperCase()}</td>`;
         continue;
       }
-      if(!as.length){html+=`<td class="franco">Día Libre</td>`;continue;}
+      if(!as.length){html+=`<td class="franco" data-d="${d}">Día Libre</td>`;continue;}
       const f=faltaDe(p.emp, w, d);
       const tach=f?(f.desde===0&&f.hasta===48?' tach':''):'';
-      html+=`<td>`;
+      const movible = esFT && escenario==='actual' && p.emp!==undefined;
+      const tocado = SWAPS.some(s=>s.w===w && (s.a===p.emp||s.b===p.emp) && s.dias.includes(d));
+      html+=`<td data-d="${d}"${movible?` class="celft${tocado?' swap':''}" data-i="${p.emp}" title="Tocá o arrastrá para cambiarle el turno a otro full time"`:(tocado?' class="swap"':'')}>`;
       for(const a of as){
         html+=`<span class="chip ${esFT?'ft':''}${tach}">${slotToHM(a.e)}–${slotToHM(a.e+a.pres)}</span> `;
       }
       if(f&&!(f.desde===0&&f.hasta===48)) html+=`<span class="desc" style="color:var(--warn)">falta ${slotToHM(f.desde)}–${slotToHM(f.hasta)}</span>`;
       const totL=as.reduce((x,a)=>x+a.len,0), totP=as.reduce((x,a)=>x+a.pres,0);
-      html+=`<span class="desc">${fmtHM(totL/2)}${totP>totL?' + '+(totP-totL)*30+' min desc':''}${as.length>1?' · cortado':''}</span>${as[0].tags?`<span class="sectag">${as[0].tags}</span>`:''}</td>`;
+      const _hue=as.length>1 ? ' · cortado, '+fmtHM((as[1].e-(as[0].e+as[0].pres))/2)+' de hueco' : '';
+      html+=`<span class="desc">${fmtHM(totL/2)}${totP>totL?' + '+(totP-totL)*30+' min desc':''}${_hue}</span>${as[0].tags?`<span class="sectag">${as[0].tags}</span>`:''}</td>`;
     }
     html+=`</tr>`;
   }
@@ -3195,6 +3836,7 @@ function renderHorarios(){
   const ft=document.getElementById('fTipo');
   if(ft) ft.addEventListener('change',()=>{document.getElementById('fFranja').style.display=ft.value==='franja'?'':'none';});
   notaFalta();
+  postRenderHorarios();
 }
 
 // Tickets promedio de ese día y esa hora, tomados del bloque de semana del mes
@@ -3260,6 +3902,7 @@ function calcularRanking(){
   if(RANK_CACHE && RANK_HUELLA === h) return RANK_CACHE;
   const ids = ['lsOpen','lsClose','doOpen','doClose'];
   const snapH = ids.map(id => document.getElementById(id).value);
+  const snap24 = ABIERTO24;
   const locAct = document.getElementById('localSel').value;
   const evSnap = EVENTOS, ferSnap = FERIADOS;
   EVENTOS = [];                                            // demanda base, sin eventos
@@ -3311,6 +3954,7 @@ function calcularRanking(){
   EVENTOS = evSnap; FERIADOS = ferSnap;
   cargarHorarios(DATA[locAct]);
   ids.forEach((id,i)=>{ document.getElementById(id).value = snapH[i]; });
+  ABIERTO24 = snap24; aplicar24();
   out.sort((a,b)=>b.tkMes-a.tkMes);
   RANK_CACHE = out; RANK_HUELLA = h;
   return out;
@@ -3559,7 +4203,7 @@ function renderVistaDia(pos, req, cov, opd, cld){
       Gris = ese día no trabaja.
       <br>
       Las columnas de la izquierda repiten el dato en texto: el <b>horario del día</b> y cuánto <b>receso</b> le
-      corresponde. La ubicación exacta del receso dentro del turno la decide el local, así que la barra no lo
+      corresponde. La herramienta ubica el receso en la hora más floja del turno y lo
       dibuja como un corte.
       <br>
       Y abajo de todas las personas están las <b>tres filas de control</b>: cuánta gente hay atendiendo en cada
@@ -3604,15 +4248,20 @@ function renderVistaDia(pos, req, cov, opd, cld){
     for(const h of horas){
       const s0=h*2;
       let dentro=false;
+      let receso=false;
       for(const a of as){
         let cub=false;
         for(const ss of [s0,s0+1]) if(ss>=a.e&&ss<a.e+a.pres){
           if(f&&ss>=f.desde&&ss<f.hasta) continue;
+          if(enDesc(a,ss)){ receso=true; continue; }
           cub=true;
         }
         if(cub) dentro=true;
       }
-      html+=`<td class="heat" style="${dentro?'background:'+colorCel+'; border-bottom:1px solid #fff;':''}"></td>`;
+      const _bg = dentro ? 'background:'+colorCel+'; border-bottom:1px solid #fff;'
+                : receso ? 'background:repeating-linear-gradient(45deg,'+colorCel+'33,'+colorCel+'33 4px,transparent 4px,transparent 8px); border-bottom:1px solid #fff;'
+                : '';
+      html+=`<td class="heat" title="${receso&&!dentro?'Hora de descanso: está en el local pero no en caja':''}" style="${_bg}"></td>`;
     }
     html+=`</tr>`;
   }
@@ -3624,7 +4273,7 @@ function renderVistaDia(pos, req, cov, opd, cld){
       const f=faltaDe(p.emp, semanaActual, d);
       for(const a of as){
         for(const ss of [h*2,h*2+1]){
-          if(ss>=a.e&&ss<a.e+a.pres&&!(f&&ss>=f.desde&&ss<f.hasta)){n++; break;}
+          if(ss>=a.e&&ss<a.e+a.pres&&!enDesc(a,ss)&&!(f&&ss>=f.desde&&ss<f.hasta)){n++; break;}
         }
         if(n&&true) break;
       }
@@ -3758,7 +4407,7 @@ function renderIdeal(pos, opd, cld, req, w){
   if(req){
     const cov = Array.from({length:7},()=>new Array(48).fill(0));
     for(const p of pos) for(const a of p.asig)
-      for(let s=a.e; s<a.e+a.pres; s++) cov[a.d][((s%48)+48)%48]++;
+      for(const s of slotsCub(a)) cov[a.d][((s%48)+48)%48]++;
     html += `<div class="small" style="margin:18px 0 0">Las dos grillas de abajo son las mismas que ves con tu equipo real y se miden contra la misma demanda, así que podés cambiar de escenario y comparar el mismo lugar de la pantalla.</div>`;
     html += grillasFranja(cov, req, opd, cld, rotuloSemLargo(w), 'iDotacionHora', 'iCobertura');
   }
@@ -3766,6 +4415,16 @@ function renderIdeal(pos, opd, cld, req, w){
 }
 
 function setSemana(w){ semanaActual=w; renderHorarios(); }
+
+// Después de cada pintada de los horarios hay que volver a enganchar la grilla.
+function postRenderHorarios(){
+  const w = semanaActual;
+  if(vistaActual==='sem' && escenario==='actual') cablearGrilla(w);
+  const u=document.getElementById('btnSwapUndo'), c=document.getElementById('btnSwapCero');
+  if(u) u.addEventListener('click', deshacerSwap);
+  if(c) c.addEventListener('click', limpiarSwaps);
+  if(_avisoSwap) avisoSwap(_avisoSwap.bien, _avisoSwap.txt);
+}
 
 function descargarExcel(){
   if(!RESULTADO){ alert('Generá el horario primero.'); return; }
@@ -3783,7 +4442,7 @@ function descargarExcel(){
                   {v:'Sector',s:ENC},{v:'Estado',s:ENC},{v:'Cortado',s:ENC},
                   ...Array.from({length:7},(_,d)=>({v:rotuloDia(w,d), s:ENC})),
                   {v:'Horas',s:ENC}]];
-    const orden = [...pos].sort((a,b)=>(a.ct.tipo==='FT'?0:1)-(b.ct.tipo==='FT'?0:1)||b.ct.horas-a.ct.horas);
+    const orden = [...pos].sort((a,b)=>a.emp-b.emp);
     for(const p of orden){
       const e = EQUIPO[p.emp];
       const porDia = Array.from({length:7},()=>[]);
@@ -3806,7 +4465,7 @@ function descargarExcel(){
                 : e.sector.charAt(0).toUpperCase()+e.sector.slice(1);
       out.push([ e.nombre||('Empleado '+(p.emp+1)), p.contrato,
                  e.cond + (etapaMat(e) ? ' ('+etapaMat(e).corto+')' : ''),
-                 sec, est, e.cortado?'Sí':'No', ...cols, {v:hs, s:NUM} ]);
+                 sec, est, (p.asig.some(a=>a.corte)?'Sí':'No'), ...cols, {v:hs, s:NUM} ]);
     }
     return out;
   }
@@ -3905,6 +4564,129 @@ function agregarFalta(){
 function quitarFalta(i){ FALTAS.splice(i,1); renderHorarios(); }
 
 // ---------- equipo UI ----------
+// ── columna Horario ─────────────────────────────────────────────────────────
+// Una persona con horario de contrato tiene e.fijo = [{d, e, len}] (medias horas).
+function tieneFijo(e){ return !!(e && e.fijo && e.fijo.length); }
+function horasFijo(e){ return tieneFijo(e) ? e.fijo.reduce((a,x)=>a+x.len,0)/2 : 0; }
+function resumenHorario(e){
+  if(tieneFijo(e)){
+    const ds=[...new Set(e.fijo.map(x=>x.d))].sort((a,b)=>a-b).map(d=>DIAS[d]);
+    return `${ds.join(' · ')} &nbsp;${fmtHM(horasFijo(e))}`;
+  }
+  const li = (e.diaLibre===null||e.diaLibre===undefined) ? 'aleatorio' : DIAS_LARGO[e.diaLibre].toLowerCase();
+  const hs = e.hasta===48 ? '24:00' : slotToHM(e.hasta);
+  return `${slotToHM(e.desde)} – ${hs} · libre: ${li}`;
+}
+let HOR_I = -1, HOR_FIJO = null;      // persona abierta y borrador de su horario
+function abrirHorario(i){
+  HOR_I = i;
+  const e = EQUIPO[i], ct = CONTRATOS[e.contrato];
+  HOR_FIJO = tieneFijo(e) ? e.fijo.map(x=>Object.assign({},x))
+           : (ct.tipo==='PT' ? [] : null);
+  document.getElementById('hTit').textContent = 'Horario de ' + (e.nombre || ('Empleado '+(i+1)));
+  document.getElementById('hSub').innerHTML = ct.tipo==='FT'
+    ? `Full time, ${ct.horas} h. Decile entre qué horas puede trabajar y qué día descansa. El horario de cada día lo arma la herramienta con la demanda de tu local.`
+    : `Part time de ${ct.horas} h. Marcá los días que trabaja por contrato y poné desde qué hora hasta qué hora.`;
+  pintarHorario();
+  document.getElementById('capaHor').style.display='flex';
+}
+function pintarHorario(){
+  const e = EQUIPO[HOR_I], ct = CONTRATOS[e.contrato], c = document.getElementById('hCuerpo');
+  if(ct.tipo==='FT'){
+    c.innerHTML = `
+      <div class="hfila"><label>Puede trabajar</label>
+        <span><input type="time" step="1800" id="hDesde" value="${slotToHM(e.desde)}" style="width:122px">
+        <span class="u2">a</span>
+        <input type="time" step="1800" id="hHasta" value="${e.hasta===48?'23:59':slotToHM(e.hasta)}" style="width:122px">
+        ${e.hasta>48?'<span class="u2"> +1 día</span>':''}</span></div>
+      <div class="hfila"><label>Día libre</label>
+        <select id="hLibre" style="min-width:190px">
+          <option value="" ${(e.diaLibre===null||e.diaLibre===undefined)?'selected':''}>Lo elige la herramienta</option>
+          ${DIAS_LARGO.map((d,di)=>`<option value="${di}" ${e.diaLibre===di?'selected':''}>${d}</option>`).join('')}
+        </select></div>
+      <div class="hinfo">Con esto la herramienta le busca los turnos que mejor cubran tu local dentro de esa franja, respetando sus ${ct.horas} h de contrato y las 12 h de descanso entre jornadas.</div>`;
+    habilitarOk(true); return;
+  }
+  // part time: los siete días
+  const porDia = {}; (HOR_FIJO||[]).forEach(x=>{ porDia[x.d]=x; });
+  c.innerHTML = '<div id="hDias"></div>'
+    + '<div class="htot"><span>Total de la semana</span><span id="hTot"></span></div><div id="hAv"></div>'
+    + '<div class="hinfo">Los días que no marques son sus <b>días libres</b>. Con el horario de contrato cargado, la herramienta no le elige los turnos: usa estos tal cual.</div>';
+  document.getElementById('hDias').innerHTML = DIAS_LARGO.map((d,i)=>{
+    const x = porDia[i];
+    return `<div class="hdia ${x?'':'off'}" data-d="${i}">
+      <label><input type="checkbox" data-k="on" ${x?'checked':''}> ${d}</label>
+      <span class="u2">de</span>
+      <input type="time" step="1800" data-k="a" value="${x?slotToHM(x.e):''}" ${x?'':'disabled'} style="width:122px">
+      <span><span class="u2">a</span> <input type="time" step="1800" data-k="b" value="${x?slotToHM(x.e+x.len):''}" ${x?'':'disabled'} style="width:122px"></span>
+    </div>`; }).join('');
+  const z = document.getElementById('hDias');
+  z.addEventListener('change', revisarHorario); z.addEventListener('input', revisarHorario);
+  revisarHorario();
+}
+function habilitarOk(ok){
+  const b=document.getElementById('hOk');
+  b.disabled=!ok; b.style.opacity=ok?1:.45; b.style.cursor=ok?'pointer':'not-allowed';
+}
+// Lee los siete días, valida y deja el borrador en HOR_FIJO.
+function revisarHorario(){
+  const ct = CONTRATOS[EQUIPO[HOR_I].contrato];
+  const local = DATA[document.getElementById('localSel').value];
+  const v = ventanaLocal(local);
+  const nuevo = []; const err = [];
+  let slots = 0;
+  document.querySelectorAll('#hDias .hdia').forEach(f=>{
+    const d = +f.dataset.d, on = f.querySelector('[data-k=on]').checked;
+    f.classList.toggle('off', !on);
+    f.querySelector('[data-k=a]').disabled=!on; f.querySelector('[data-k=b]').disabled=!on;
+    if(!on) return;
+    const a = hmToSlot(f.querySelector('[data-k=a]').value);
+    let   b = f.querySelector('[data-k=b]').value==='23:59' ? 48 : hmToSlot(f.querySelector('[data-k=b]').value);
+    if(a===null||a===undefined||b===null||b===undefined){ err.push(DIAS_LARGO[d]+': falta una hora'); return; }
+    if(b<=a) b += 48;                                   // cruza la medianoche
+    if(b-a < 2){ err.push(DIAS_LARGO[d]+': el turno tiene que durar al menos 1 hora'); return; }
+    if(a < v.o || b > v.cl + 2) err.push(DIAS_LARGO[d]+': ese turno queda fuera del horario del local');
+    slots += b-a; nuevo.push({d, e:a, len:b-a});
+  });
+  HOR_FIJO = nuevo;
+  const hs = slots/2, t = document.getElementById('hTot'), av = document.getElementById('hAv');
+  const bien = Math.abs(hs-ct.horas) < 0.01 && !err.length;
+  t.innerHTML = `<span class="${bien?'ok':'mal'}">${fmtHM(hs)} de ${ct.horas} h${bien?' ✓':''}</span>`;
+  if(err.length) av.innerHTML = '<div class="hmal">'+err.join('<br>')+'</div>';
+  else if(hs>ct.horas) av.innerHTML = `<div class="hmal"><b>Te pasaste por ${fmtHM(hs-ct.horas)}.</b> El contrato es de ${ct.horas} h por semana.</div>`;
+  else if(hs<ct.horas) av.innerHTML = `<div class="hmal"><b>Te faltan ${fmtHM(ct.horas-hs)}.</b> No se puede guardar hasta completar las ${ct.horas} h del contrato.</div>`;
+  else av.innerHTML = '';
+  habilitarOk(bien || !nuevo.length);      // sin ningún día marcado se vuelve a Automático
+}
+function guardarHorario(){
+  const e = EQUIPO[HOR_I], ct = CONTRATOS[e.contrato];
+  if(ct.tipo==='FT'){
+    const a = hmToSlot(document.getElementById('hDesde').value);
+    let   b = document.getElementById('hHasta').value==='23:59' ? 48 : hmToSlot(document.getElementById('hHasta').value);
+    if(a!==null && a!==undefined) e.desde = a;
+    if(b!==null && b!==undefined){ if(b<=e.desde) b += 48; e.hasta = b; }
+    const l = document.getElementById('hLibre').value;
+    e.diaLibre = (l==='') ? null : +l;
+    sincronizarDias(e);
+    delete e.fijo;
+  } else {
+    if(HOR_FIJO && HOR_FIJO.length){
+      e.fijo = HOR_FIJO.map(x=>Object.assign({},x));
+      e.dias = [0,0,0,0,0,0,0]; e.fijo.forEach(x=>{ e.dias[x.d]=1; });
+      e.diaLibre = null;
+      // la ventana de disponibilidad pasa a ser la que abarca su propio horario
+      e.desde = Math.min(...e.fijo.map(x=>x.e));
+      e.hasta = Math.max(...e.fijo.map(x=>x.e+x.len));
+    } else {
+      delete e.fijo; sincronizarDias(e);
+    }
+  }
+  cerrarHorario(); renderEquipo();
+  RESULTADO=null; IDEAL_POS=null; IDEAL_ROT=null;
+  refrescarIdeal(); renderHorarios(); autoguardar();
+}
+function cerrarHorario(){ document.getElementById('capaHor').style.display='none'; HOR_I=-1; }
+
 function renderEquipo(){
   const tb=document.querySelector('#tablaEquipo tbody');
   tb.innerHTML=EQUIPO.map((e,i)=>`<tr>
@@ -3938,28 +4720,33 @@ function renderEquipo(){
               value="${e.ausHasta||isoDe(TRAMO.fin)}" min="${isoDe(TRAMO.ini)}" max="${isoDe(TRAMO.fin)}" style="width:130px"></div>`}
         <div style="margin-top:3px; max-width:200px; color:var(--gold); font-weight:600">${textoVentana(e)||'la fecha cargada no cae en este mes'}</div>
       </div>`:''}</td>
-    <td><input type="time" step="1800" data-eq="${i}" data-f="desde" value="${slotToHM(e.desde)}" style="width:90px"></td>
-    <td><input type="time" step="1800" data-eq="${i}" data-f="hasta" value="${e.hasta===48?'23:59':slotToHM(e.hasta)}" style="width:90px">${e.hasta>48?' <span class="small">+1 día</span>':''}</td>
-    <td><select data-eq="${i}" data-f="diaLibre" style="min-width:118px">
-      <option value="" ${(e.diaLibre===null||e.diaLibre===undefined)?'selected':''}>Aleatorio</option>
-      ${DIAS_LARGO.map((d,di)=>`<option value="${di}" ${e.diaLibre===di?'selected':''}>${d}</option>`).join('')}
-    </select></td>
+    <td><button type="button" class="bhor ${tieneFijo(e)?'fijo':''}" data-abrir="${i}"
+          title="Tocá para configurar cuándo trabaja esta persona">
+          <span>${resumenHorario(e)}</span><span class="lap">✎</span></button></td>
     <td style="text-align:center"><input type="checkbox" data-eq="${i}" data-f="cortado" ${e.cortado?'checked':''} ${CONTRATOS[e.contrato].tipo==='PT'?'disabled':''}></td>
   </tr>`).join('');
   // el piso de full time se mantiene al día con el equipo cargado
   sincronizarPiso();
+  tb.querySelectorAll('[data-abrir]').forEach(b=>
+    b.addEventListener('click', ()=>abrirHorario(+b.dataset.abrir)));
   tb.querySelectorAll('[data-eq]').forEach(el=>{
     el.addEventListener('change',()=>{
       const i=+el.dataset.eq, f=el.dataset.f, e=EQUIPO[i];
       if(f==='nombre') e.nombre=el.value;
-      else if(f==='contrato') e.contrato=el.value;
+      else if(f==='contrato'){
+        e.contrato=el.value;
+        // el horario de contrato vale para ESE contrato: si cambia, se descarta
+        if(e.fijo && (CONTRATOS[el.value].tipo!=='PT' || horasFijo(e)!==CONTRATOS[el.value].horas)){
+          delete e.fijo; sincronizarDias(e);
+        }
+      }
       else if(f==='matEtapa'){ e.matEtapa=el.value; }
       else if(f==='cond'){
         e.cond=el.value;
         if(el.value==='Maternidad' && !MATERNIDAD[e.matEtapa]) e.matEtapa=MAT_DEFAULT;
         const c=CONDICIONES[el.value], local=DATA[document.getElementById('localSel').value];
-        const o=local.is24?0:Math.round(local.open*2), cl=local.is24?48:Math.round(local.close*2);
-        if(el.value==='Nocturno' && !local.is24){
+        const _v=ventanaLocal(local), o=_v.o, cl=_v.cl;
+        if(el.value==='Nocturno' && !es24()){
           // el local cierra antes de la medianoche: no se puede cruzar, así que se
           // precarga la última franja que entra antes del cierre
           e.hasta = cl; e.desde = Math.max(o, cl-16);
@@ -4034,7 +4821,7 @@ function sincronizarPiso(forzar){
   }
 }
 function resetSimBajas(){
-  PISO_ESC = null; _pisoTocado = false; _ultimoPiso = null;
+  PISO_ESC = null; _pisoTocado = false; _ultimoPiso = null; _avisoFirma = null;
   sincronizarPiso(true);
 }
 // Reescribe Mi equipo con los contratos de un escenario, sin perder a la gente:
@@ -4043,8 +4830,7 @@ function resetSimBajas(){
 // nuevas. Si sobra gente, se sacan primero las filas sin nombre.
 function aplicarDotacion(contratos){
   const local = DATA[document.getElementById('localSel').value];
-  const o = local.is24 ? 0 : Math.round(local.open*2);
-  const cl = local.is24 ? 48 : Math.round(local.close*2);
+  const _v = ventanaLocal(local), o = _v.o, cl = _v.cl;
   const libres = EQUIPO.slice();
   const nuevo = [];
 
@@ -4054,6 +4840,12 @@ function aplicarDotacion(contratos){
     if(k < 0) k = 0;                                             // cualquiera
     if(libres.length){
       const e = libres.splice(k,1)[0];
+      // El horario de contrato declarado deja de valer si el contrato cambió de
+      // tipo o de horas: si no, queda un PT 24h con un horario fijo de 20 h.
+      if(e.fijo && e.fijo.length){
+        const vi = CONTRATOS[e.contrato], vf = CONTRATOS[ct];
+        if(!vi || !vf || vi.tipo!==vf.tipo || vi.horas!==vf.horas) delete e.fijo;
+      }
       e.contrato = ct;
       nuevo.push(e);
     } else {
@@ -4078,9 +4870,20 @@ function calcularPiso(){
   }
   const piso = Math.max(0, Math.min(60, +inp.value||0));
   inp.value = piso; _pisoTocado = true;
-
+  // Recalcular NO toca Mi equipo ni el horario. Sólo contesta la pregunta:
+  // con estos full time, ¿me alcanza o cuántos part time necesito? El resultado
+  // se muestra como escenario, calculado de cero y sin arrastrar las condiciones
+  // de la gente que tengas cargada. Para adoptarlo hay un botón aparte.
+  PISO_ESC = piso;
+  _ultimoPiso = null;
+  renderIdealConfig();
+}
+// Adoptar la dotación del escenario: ACÁ sí se reemplaza Mi equipo, y se avisa.
+function adoptarDotacion(){
   const local = DATA[document.getElementById('localSel').value];
   if(!local) return;
+  const piso = PISO_ESC;
+  if(piso===null || piso===undefined) return;
   let pos;
   try{
     const d = demandaTramo(local);
@@ -4088,21 +4891,29 @@ function calcularPiso(){
     pos = optimizarMixGerencial(req, d.opd, d.cld, piso);
   }catch(err){ return; }
   if(!pos.length && piso===0) return;
-
-  // FT primero, después los part time del más grande al más chico
   const contratos = pos.map(q => q.contrato || q.nombre)
     .sort((a,b) => (CONTRATOS[b]?.horas||0) - (CONTRATOS[a]?.horas||0));
-
+  const nAhora = EQUIPO.length;
+  if(nAhora){
+    const msg = 'Esto reemplaza tu equipo cargado.\n\n'
+      + 'Tenés ' + nAhora + (nAhora===1?' persona':' personas') + ' y pasa a ' + contratos.length + '.\n\n'
+      + 'SE CONSERVA de cada persona: nombre, condición, día libre, sector, estado y si hace turno cortado.\n'
+      + 'SE REEMPLAZA: el contrato de cada uno, y el horario de contrato de los part time cuyo contrato cambie.\n'
+      + (contratos.length < nAhora ? ('\nSe quitan ' + (nAhora-contratos.length) + ' personas de la tabla.\n') : '')
+      + '\n¿Seguimos?';
+    if(!confirm(msg)) return;
+  }
   aplicarDotacion(contratos);
-  PISO_ESC = null;          // lo que se muestra ya es el equipo real
+  PISO_ESC = null;
   _ultimoPiso = piso;
   renderEquipo();
   renderIdealConfig();
-  _generarSinSaltar = true; // el gerente se queda en Configuración para seguir probando
+  _generarSinSaltar = true;
   generar();
   autoguardar();
 }
 let _ultimoPiso = null;
+let _avisoFirma = null;   // avisos que el gerente ya confirmó para este equipo
 let _generarSinSaltar = false;
 
 
@@ -4110,7 +4921,7 @@ let _generarSinSaltar = false;
 function aplicarEquipo(){
   const n=Math.max(1,Math.min(60,+document.getElementById('nEquipo').value||1));
   const local=DATA[document.getElementById('localSel').value];
-  const o=local.is24?0:Math.round(local.open*2), cl=local.is24?48:Math.round(local.close*2);
+  const _v=ventanaLocal(local), o=_v.o, cl=_v.cl;
   while(EQUIPO.length<n) EQUIPO.push({nombre:'', contrato:'FT 48h', cond:'Normal', estado:'Activo', desde:o, hasta:cl, diaLibre:null, dias:[1,1,1,1,1,1,1], cortado:false});
   EQUIPO.length=n;
   for(const e of EQUIPO) normalizarEmpleado(e);
@@ -4179,6 +4990,7 @@ function estadoActual(){
   return { local:document.getElementById('localSel').value,
     horarios:{ls:[document.getElementById('lsOpen').value,document.getElementById('lsClose').value],
               dom:[document.getElementById('doOpen').value,document.getElementById('doClose').value]},
+    abierto24: ABIERTO24, swaps: SWAPS,
     ausentismo:+document.getElementById('ausentismo').value,
     corte:[+document.getElementById('corteMin').value, +document.getElementById('corteMax').value],
     mes:MES_SEL, anio:ANIO_SEL,
@@ -4259,6 +5071,10 @@ function aplicarCfg(cfg, avisar){
         if(cfg.horarios.dom[0])document.getElementById('doOpen').value=cfg.horarios.dom[0];
         if(cfg.horarios.dom[1])document.getElementById('doClose').value=cfg.horarios.dom[1];
       }
+      SWAPS = Array.isArray(cfg.swaps) ? cfg.swaps : [];
+      if(cfg.abierto24 !== undefined && DATA[document.getElementById('localSel').value].is24){
+        ABIERTO24 = !!cfg.abierto24; aplicar24();
+      }
       document.getElementById('ausentismo').value=cfg.ausentismo??10;
       if(cfg.corte){document.getElementById('corteMin').value=cfg.corte[0]??1; document.getElementById('corteMax').value=cfg.corte[1]??4;}
       if(cfg.mes && cfg.anio){
@@ -4301,14 +5117,45 @@ function etiquetarTodo(local){
 }
 
 // ---------- generar ----------
+// Qué le falta al equipo antes de generar. Lo único que BLOQUEA es no tener
+// gente: todo lo demás son avisos, porque una fila sin nombre es un caso válido
+// (así queda cuando adoptás la dotación sugerida) y bloquear por eso sólo lograría
+// que el gerente escriba cualquier cosa para pasar el filtro.
+function revisarEquipo(){
+  const avisos=[];
+  const act = EQUIPO.filter(e=>(e.estado||'Activo')!=='Baja');
+  const sinNombre = act.filter(e=>!(e.nombre||'').trim()).length;
+  const intacto = EQUIPO.length>0 && EQUIPO.every(e=>
+      !(e.nombre||'').trim() && e.contrato==='FT 48h' && (e.cond||'Normal')==='Normal'
+      && !e.cortado && (e.diaLibre===null||e.diaLibre===undefined));
+  if(intacto) avisos.push('El equipo está tal cual vino por defecto: '+EQUIPO.length
+      +' full time sin nombre y sin ninguna condición cargada. ¿Es realmente el equipo de tu local?');
+  else if(sinNombre) avisos.push(sinNombre+(sinNombre===1?' persona no tiene':' personas no tienen')
+      +' nombre cargado. El horario sale igual, pero no vas a poder repartirlo.');
+  const ptSinHorario = act.filter(e=>CONTRATOS[e.contrato] && CONTRATOS[e.contrato].tipo==='PT' && !tieneFijo(e)).length;
+  if(ptSinHorario) avisos.push(ptSinHorario+(ptSinHorario===1?' part time no tiene':' part time no tienen')
+      +' cargado su horario de contrato (días y horas). Sin eso la herramienta les arma el turno ella misma, que no es lo que dice su contrato.');
+  return avisos;
+}
 function generar(){
   if(!EQUIPO.length){alert('Cargá tu equipo primero (Cantidad de personas → Aplicar).');return;}
+  if(!_generarSinSaltar){
+    const av = revisarEquipo(), firma = av.join('|');
+    // se pregunta una sola vez por cada combinación de avisos: si el gerente ya
+    // dijo que sí con el equipo así, no se le vuelve a preguntar lo mismo
+    if(av.length && firma !== _avisoFirma){
+      if(!confirm('Antes de generar, revisá esto:\n\n• '+av.join('\n\n• ')
+          +'\n\n¿Generamos el horario igual?')) { setTab('config'); return; }
+      _avisoFirma = firma;
+    }
+  }
   const btn=document.getElementById('btnGenerar');
   btn.disabled=true; btn.textContent='Generando…';
   setTimeout(()=>{
     const local=DATA[document.getElementById('localSel').value];
     RESULTADO=asignarEquipo(local);
     etiquetarTodo(local);
+    aplicarSwaps();
     IDEAL_POS = null; IDEAL_ROT = null; escenario = 'actual';
     btn.disabled=false; btn.textContent='Generar horario →';
     const saltar = !_generarSinSaltar; _generarSinSaltar = false;
@@ -4359,7 +5206,7 @@ document.getElementById('btnMiClave').addEventListener('click', ()=>{
 });
 document.getElementById('cvCancel').addEventListener('click', ()=>{ document.getElementById('capaClave').style.display='none'; });
 document.getElementById('cvBtn').addEventListener('click', guardarClave);
-sel.addEventListener('change',()=>{ cargarHorarios(DATA[sel.value]); RESULTADO=null; IDEAL_POS=null; IDEAL_ROT=null; RANK_CACHE=null; FALTAS=[]; resetSimBajas(); renderHorarios(); refrescarIdeal(); });
+sel.addEventListener('change',()=>{ cargarHorarios(DATA[sel.value]); RESULTADO=null; IDEAL_POS=null; IDEAL_ROT=null; RANK_CACHE=null; FALTAS=[]; SWAPS=[]; resetSimBajas(); renderHorarios(); refrescarIdeal(); });
 document.getElementById('btnEquipo').addEventListener('click',aplicarEquipo);
 document.getElementById('btnPiso').addEventListener('click', calcularPiso);
 renderCtChecks();
@@ -4406,6 +5253,17 @@ for(const id of ['lsOpen','lsClose','doOpen','doClose']){
   const el=document.getElementById(id);
   if(el) el.addEventListener('change', refrescarIdeal);
 }
+document.getElementById('chk24').addEventListener('change', function(){
+  ABIERTO24 = this.checked;
+  aplicar24();
+  RESULTADO = null; IDEAL_POS = null; IDEAL_ROT = null; RANK_CACHE = null;
+  refrescarIdeal(); renderHorarios(); autoguardar();
+});
+document.getElementById('swX').addEventListener('click', cerrarSwap);
+document.getElementById('capaSwap').addEventListener('click', e=>{ if(e.target.id==='capaSwap') cerrarSwap(); });
+document.getElementById('hOk').addEventListener('click', guardarHorario);
+document.getElementById('hCancel').addEventListener('click', cerrarHorario);
+document.getElementById('capaHor').addEventListener('click', e=>{ if(e.target.id==='capaHor') cerrarHorario(); });
 document.getElementById('btnGuardar').addEventListener('click',guardar);
 document.getElementById('btnCargar').addEventListener('click',()=>document.getElementById('fileCargar').click());
 document.getElementById('btnCero').addEventListener('click', empezarDeCero);

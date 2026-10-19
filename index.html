@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Horario del Local · Dotación Actual · v6.68</title>
+<title>Horario del Local · Dotación Actual · v6.73</title>
 <style>
   :root{
     /* La herramienta es de tema claro. Sin esto, un navegador en modo oscuro dibuja
@@ -471,6 +471,13 @@
     </div>
   </div>
 
+  <div class="box" id="boxSectores" style="display:none">
+    <h3>Horario de tus sectores</h3>
+    <div class="small" style="margin-bottom:9px">Tu local atiende sectores además de la línea de cajas. Cargá desde y hasta qué hora abre cada uno: la herramienta exige <b>una persona como mínimo</b> en cada sector mientras esté abierto, igual que en la línea de cajas. La línea no se carga acá — abre y cierra con tu local.</div>
+    <div id="gridSectores" class="rowflex" style="gap:18px; flex-wrap:wrap; align-items:center"></div>
+    <div class="small" id="secNota" style="margin-top:6px"></div>
+  </div>
+
   <div class="box">
     <h3>Feriados del mes</h3>
     <div class="small" style="margin-bottom:9px">Marcá los días que este mes caen feriado. No hace falta cargar fechas: alcanza con la semana y el día. Un día marcado abre con el horario de <b>Dom y feriados</b>, y si le cae en el día libre de alguien te aviso al generar el horario.</div>
@@ -817,6 +824,19 @@ const MANUAL_SECS = [
 
   { id:'horario', t:'Horario del local', h:_horarioLocalTxt },
 
+  { id:'sectores', t:'Horario de tus sectores', h:()=>{
+    const s = sectoresActuales();
+    if(!s.length) return `<p>Tu local no tiene sectores además de la línea de cajas, así que esta sección no te aparece en Configuración.</p>`;
+    return `
+    <p>Si tu local atiende sectores además de la línea de cajas —Mediterránea, Canasta, Parrillada— tenés que cargar <b>desde y hasta qué hora abre cada uno</b>. Está en Configuración, abajo del horario del local.</p>
+    <p><b>Es obligatorio.</b> La herramienta no genera el horario hasta que esté cargado, y no pone ningún valor por sí sola: el horario de un sector no se puede adivinar. El estándar viejo de la cadena dejaba sectores sin cubrir en los locales que abren temprano, y suponer que el sector abre con el local haría pedir gente en un sector de comida a las 3 de la madrugada en un local de 24 horas.</p>
+    <p>De ese dato sale la regla más importante: <b>mientras un sector está abierto, la herramienta exige una persona como mínimo</b>, igual que en la línea de cajas. Si tu local abre a las 06:00 con la línea, Canasta y Mediterránea abiertas, la dotación de esa hora va a pedir <b>tres personas</b>, no dos.</p>
+    <p>La línea de cajas no se carga acá: abre y cierra con tu local.</p>
+    <p><b>La parrillada lleva además los días.</b> Como abre uno o dos días a la semana y no todos, marcá cuáles. <b>No se le asigna a nadie en Mi equipo</b>: no aparece en la columna Sector, porque nadie es "de parrillada" — la cubre quien esté trabajando ese día, y en su horario le figura sólo ese día. El resto de la semana esa persona está en línea de cajas o en el sector que le toque.</p>
+    <p class="mnota">Si cambiás una hora, la herramienta borra el horario generado: estaba armado con la ventana anterior. Volvé a tocar Generar horario.</p>
+    <p>Tu local tiene: ${s.map(x=>`<b>${x}</b>`).join(' · ')}.</p>`;
+  } },
+
   { id:'feriados', t:'Feriados del mes', h:()=>`
     <p>Los feriados de Paraguay vienen marcados solos. Un día marcado como feriado usa el horario de "Dom y feriados", así que su demanda se recorta.</p>
     <p>Si un feriado se trasladó por decreto, desmarcá el que no va y marcá el que corresponde. <b>Volvé a tocar Generar horario</b> para que se aplique.</p>` },
@@ -824,7 +844,8 @@ const MANUAL_SECS = [
   { id:'rotativos', t:'Turnos rotativos', h:()=>`
     <p>Con la opción activada, los full time <b>alternan banda semana a semana</b>: al que le toca la mañana en la semana 1 le toca la tarde en la 2, mañana otra vez en la 3, y así.</p>
     <p>Se intercambian de a pares —uno de mañana con uno de tarde—, así que <b>los turnos del local no cambian: cambia quién los hace</b>. Cada uno conserva su día libre y sus horas, y la cobertura y el costo quedan exactamente iguales.</p>
-    <p>Sirve para que el turno de cierre no caiga siempre sobre la misma gente. No entran en la rotación los part time (cumplen horario fijo), los turnos cortados ni las jornadas reducidas por maternidad ni los nocturnos.</p>` },
+    <p>Sirve para que el turno de cierre no caiga siempre sobre la misma gente. No entran en la rotación los part time (cumplen horario fijo), los turnos cortados ni las jornadas reducidas por maternidad ni los nocturnos.</p>
+    <p><b>La gente de sector rota aparte.</b> Los que marcaste en un mismo sector se intercambian entre ellos: el que abría Canasta pasa a cerrarla y al revés. Así rotan de verdad, pero el sector lo sigue atendiendo su propia gente y no alguien de la línea.</p>` },
 
   { id:'equipo', t:'Mi equipo · cómo cargar a tu gente', h:()=>`
     <p>Poné cuántos son y tocá <b>Aplicar</b>: se habilitan las filas. Una fila por persona.</p>
@@ -847,8 +868,17 @@ const MANUAL_SECS = [
     <h4>Disponible desde / hasta</h4>
     <p>La franja en la que esa persona puede trabajar. La condición la precarga, pero la podés ajustar. Si la hora de salida es <b>anterior</b> a la de entrada, se entiende que el turno cruza la medianoche y aparece el cartel "+1 día".</p>
     <h4>Sector</h4>
-    <p>En <b>Automático</b> el sistema decide quién atiende cada sector en cada franja. Si querés fijarlo, elegí el sector y esa persona queda asignada ahí durante la ventana del sector; el resto de su turno sigue en línea de cajas. <b>Sólo línea de cajas</b> la deja siempre en línea.</p>
-    <p>Fijar a alguien <b>no cambia cuánta gente hace falta ni el costo</b>: el horario se sigue armando contra la demanda total del local. Lo único que cambia es quién atiende cada puesto. Y si su turno no se cruza con la ventana del sector, se queda en línea — no se le mueve el turno para hacerla entrar.</p>
+    <p>En <b>Automático</b> el sistema decide quién atiende cada sector en cada franja. Si querés fijarlo, elegí el sector y esa persona pasa a ser gente de ese sector. <b>Sólo línea de cajas</b> la deja siempre en línea.</p>
+    <p>Fijar a alguien <b>no cambia cuánta gente hace falta ni el costo</b>: el horario se sigue armando contra la demanda total del local. Lo que cambia es quién atiende cada puesto — y cuándo entra.</p>
+    <p>Marcar a alguien a un sector activa tres reglas:</p>
+    ${_li([
+      '<b>Entra con su tramo del sector.</b> Si marcás a una sola persona, entra con la apertura del sector. Si marcás a dos, <b>una abre y la otra cierra</b>, y entre las dos cubren la ventana entera. Con tres, se reparten en tres.',
+      '<b>No libran el mismo día.</b> Dos personas del mismo sector salen de día libre en días distintos, para que el sector nunca se quede sin ninguno de los suyos. El día que falta uno, el otro sigue ahí y la línea de cajas tapa el tramo que queda.',
+      '<b>Rotan entre ellas.</b> Con turnos rotativos activados, los del mismo sector se intercambian la apertura y el cierre semana a semana. No se mezclan con la rotación de la línea de cajas, así que el sector nunca queda en manos de otro.',
+    ])}
+    <p>Si su turno no se cruza con la ventana del sector, se queda en línea: no se le inventa un turno para hacerla entrar.</p>
+    <h4>Cuántos sectores puede cubrir una persona en un día</h4>
+    <p><b>Dos como máximo, y cada uno en un solo bloque continuo.</b> No se sale de un sector y se vuelve más tarde. Cada cambio de sector obliga a cerrar una caja, abrir otra y volver a loguearse: tres sectores en una jornada son movimientos innecesarios y pérdida de tiempo de atención.</p>
     <h4>Refuerzo en las horas pico del sector</h4>
     <p>Un sector de comida no se atiende parejo todo el día: al mediodía y a la merienda se llena y una sola persona no da abasto. Por eso la cobertura del sector se decide <b>franja por franja</b>:</p>
     ${_li([
@@ -858,7 +888,7 @@ const MANUAL_SECS = [
     <p>El refuerzo sale de gente que ya está trabajando, así que <b>no suma horas ni costo</b>. Y sólo se da si al mover a esa persona la línea queda igual de cubierta: si no hay de dónde sacarla, no se fuerza nada y te aparece el aviso <i>«Refuerzo de sector sin cubrir»</i> en la pestaña Horarios, con el día y la franja exactos.</p>
     <p>En el horario lo vas a ver escrito en el turno de la persona: <i>línea → mediterráneo 12:00–13:00 → línea</i>. Los refuerzos se dan en bloques de <b>una hora como mínimo</b>: mover a alguien de puesto por media hora no es ejecutable en el local.</p>
     ${(()=>{ const s=sectoresActuales(); return s.length
-      ? `<p>Tu local tiene: ${s.map(x=>`<b>${x}</b> (ventana ${ventanaSector(x)})`).join(' · ')}.</p>`
+      ? `<p>Tu local tiene: ${s.map(x=>`<b>${x}</b> (ventana ${ventanaSector(x)})`).join(' · ')}. Ese horario lo cargás vos en <b>Configuración → Horario de tus sectores</b>, y mientras el sector está abierto la herramienta exige <b>una persona como mínimo</b>, igual que en la línea de cajas.</p>`
       : '<p>Tu local no tiene sectores especiales, así que esta columna aparece deshabilitada.</p>'; })()}
     <h4>Día libre</h4>
     <p>En <b>Aleatorio</b> lo elige el sistema buscando el día que menos afecta la cobertura. Si a alguien le corresponde un día fijo, elegilo y se respeta.</p>
@@ -890,7 +920,9 @@ const MANUAL_SECS = [
 
   { id:'generar', t:'Generar el horario', h:()=>`
     <p>Con el equipo cargado, tocá <b>Generar horario →</b>. Te lleva solo a la pestaña Horarios.</p>
-    <p>Cada vez que cambies algo —una condición, un feriado, un evento, el horario del local— volvé a tocarlo para que se aplique.</p>` },
+    <p>Cada vez que cambies algo —una condición, un feriado, un evento, el horario del local— volvé a tocarlo para que se aplique.</p>
+    <p><b>Si tu local tiene sectores</b> y todavía no cargaste el horario de alguno, la herramienta no genera y te dice cuál falta. Es en Configuración, en <i>Horario de tus sectores</i>.</p>
+    <p>Antes de generar también te avisa si quedó algo a medias en Mi equipo —una persona sin contrato, una condición sin fechas—. Podés generar igual, pero conviene mirarlo.</p>` },
 
   { id:'leer', t:'Leer el horario', h:()=>`
     <p>Arriba elegís la semana. Después tenés tres vistas:</p>
@@ -964,6 +996,13 @@ const MANUAL_SECS = [
     <p>Porque con su ventana de disponibilidad y el horario del local no entra ningún turno de su contrato. Suele pasar cuando se le achicó mucho el "disponible desde/hasta". Ensanchale la ventana y volvé a generar.</p>
     <h4>El nocturno me marca 42 horas y no 48. ¿Está mal?</h4>
     <p>No. El nocturno trabaja ${(typeof JORNADA_NOC!=='undefined'?JORNADA_NOC.len/2:7)} horas por noche porque la hora nocturna se paga a 8/7: esas 42 horas equivalen a las 48 del contrato y se pagan como 48.</p>
+    <h4>No me deja generar el horario y me habla de sectores.</h4>
+    <p>Falta cargar el horario de alguno de tus sectores en Configuración → <i>Horario de tus sectores</i>. El mensaje te dice cuál. De ese dato sale la exigencia de una persona como mínimo por sector, así que sin él la dotación saldría más baja de lo que tu local necesita.</p>
+    <h4>El día libre del cajero de Canasta, ¿quién cubre el sector?</h4>
+    <p>Primero su compañero de sector, que nunca libra el mismo día. El tramo que queda sin él lo cubre alguien de la línea de cajas, y la herramienta elige a quien pueda taparlo sin descubrir la línea.</p>
+    <h4>El nocturno sale de día libre. ¿Quién hace esa noche?</h4>
+    <p>Un full time diurno, el mismo toda la semana. Si en esa semana libran dos nocturnos, <b>esa misma persona hace las dos noches</b> y después le toca su día libre, justo al día siguiente de la última noche. La semana siguiente el soporte es otro: la herramienta va rotando y elige siempre al que menos noches lleva en el mes.</p>
+    <p>Esas noches son de ${(typeof JORNADA_NOC!=='undefined'?JORNADA_NOC.len/2:7)} horas, igual que las del nocturno titular: el tope es de la jornada nocturna, no de la persona.</p>
     <h4>¿Por qué la dotación ideal no coincide con la de RRHH?</h4>
     <p>Es una aproximación rápida del mismo motor, corriendo sólo sobre tu local. El número oficial de la cadena sale de la herramienta de Mix de Contratos.</p>
     <h4>Marqué a alguien de vacaciones toda una semana y el resto no se movió.</h4>
@@ -1348,7 +1387,7 @@ function restaurarTrabajo(loc){
     aplicarCfg(cfg, false);
     // el trabajo se restaura igual, pero sin cartel: era una línea más para leer
     if(av){ av.style.display='none'; av.innerHTML=''; }
-    if(cfg.generado && EQUIPO.length){
+    if(cfg.generado && EQUIPO.length && ventanasListas()){
       const lc = DATA[document.getElementById('localSel').value];
       RESULTADO = asignarEquipo(lc); etiquetarTodo(lc); aplicarSwaps();
       renderRotNota(); renderHorarios();
@@ -1606,24 +1645,61 @@ function planRotado(posA, opd, cld){
   const elig = elegiblesRot(posA)
     .map(p=>({emp:p.emp, e:entradaMedia(p)}))
     .sort((a,b)=>a.e-b.e);
-  const pares = Math.floor(elig.length/2);
-  if(!pares) return null;
   const n = elig.length;
+  if(n < 2) return null;
+  // la banda (mañana / tarde) se sigue midiendo contra todo el equipo
   const corte = (n%2) ? elig[(n-1)/2].e : (elig[n/2-1].e + elig[n/2].e)/2;
+
+  // Las parejas se arman DENTRO de cada grupo: cada sector por un lado y la
+  // línea de cajas por otro. Si Franco abre Canasta y Pablo la cierra, la
+  // semana rotada se la intercambian entre ellos y el sector sigue cubierto
+  // por su gente. Un sector con una sola persona no rota: no hay con quién.
+  const grupos = {};
+  for(const x of elig){
+    const eq = EQUIPO[x.emp];
+    const g = (eq && eq.sector) ? eq.sector : '__línea';
+    (grupos[g] = grupos[g] || []).push(x);
+  }
+  const parejas = [];
+  for(const k of Object.keys(grupos)){
+    const g = grupos[k];                       // ya viene ordenado por entrada
+    const m = Math.floor(g.length/2);
+    for(let j=0;j<m;j++) parejas.push([g[j], g[g.length-1-j]]);
+  }
+  const pares = parejas.length;
+  if(!pares) return null;
 
   const posB = posA.map(p => Object.assign({}, p, {asig: p.asig.map(a=>Object.assign({},a))}));
   const porEmp = {}; posB.forEach((q,k)=>{ porEmp[q.emp]=k; });
 
   for(let j=0;j<pares;j++){
-    const a=posB[porEmp[elig[j].emp]], b=posB[porEmp[elig[n-1-j].emp]];
+    const a=posB[porEmp[parejas[j][0].emp]], b=posB[porEmp[parejas[j][1].emp]];
     const ea=EQUIPO[a.emp], eb=EQUIPO[b.emp];
     for(let d=0;d<7;d++){
       const ad=a.asig.filter(x=>x.d===d), bd=b.asig.filter(x=>x.d===d);
       if(!ad.length || !bd.length) continue;         // si uno descansa, ese día no se cambia
       const cabe=(turnos,emp)=>turnos.every(t=> t.e>=emp.desde && t.e+t.pres<=emp.hasta && t.e>=opd[d] && t.e+t.pres<=cld[d]);
       if(!cabe(bd,ea) || !cabe(ad,eb)) continue;     // sólo si a los dos les entra el del otro
-      a.asig = a.asig.filter(x=>x.d!==d).concat(bd.map(x=>Object.assign({},x)));
-      b.asig = b.asig.filter(x=>x.d!==d).concat(ad.map(x=>Object.assign({},x)));
+      // El plan base respeta las 12 hs de descanso, pero el intercambio las puede
+      // romper: a alguien que cerraba el jueves se le puede terminar dando la
+      // apertura del viernes. Se arma el cambio, se controlan los dos bordes del
+      // día —el de ayer y el de mañana, dando la vuelta a la semana— y si no
+      // llega a las 12 hs ese día no se cambia.
+      const finDia=(as,dd)=>{ let f=-1; for(const x of as) if(x.d===dd){ const t=x.e+x.pres; if(t>f) f=t; } return f; };
+      const iniDia=(as,dd)=>{ let i=1e9; for(const x of as) if(x.d===dd && x.e<i) i=x.e; return i===1e9?-1:i; };
+      const okDesc=(as)=>{
+        for(const par of [[(d+6)%7, d], [d, (d+1)%7]]){
+          const f=finDia(as,par[0]), i=iniDia(as,par[1]);
+          if(f<0 || i<0) continue;
+          if(i+48-f < 24) return false;
+        }
+        return true;
+      };
+      const aNew = a.asig.filter(x=>x.d!==d).concat(bd.map(x=>Object.assign({},x)));
+      const bNew = b.asig.filter(x=>x.d!==d).concat(ad.map(x=>Object.assign({},x)));
+      if(!okDesc(aNew) || !okDesc(bNew)) continue;
+      a.asig = aNew;
+      b.asig = bNew;
     }
   }
   for(const q of posB) q.banda = (q.asig.length && rotaFT(EQUIPO[q.emp],q)) ? bandaCon(q, corte) : null;
@@ -2311,7 +2387,7 @@ const EXIGIR_SECTORES = true;
 
 const PRESENCIA = {8:8, 10:11, 12:13, 14:15, 16:18};
 // ───────────────────────────────────────────────────────────────────────────
-// LA HORA DE DESCANSO  (v6.68)
+// LA HORA DE DESCANSO  (v6.73)
 // Un turno corrido de full time son 9 hs de presencia: 8 de trabajo + 1 de
 // descanso. Durante esa hora la persona está en el local pero NO está en la
 // caja, así que NO cubre demanda. Hasta la 6.59 el motor contaba las 9 hs como
@@ -2340,6 +2416,54 @@ const DESC_MIN = 6, DESC_FIN = 4;
 const TOPE_CORTE = 3;
 const LARGOS_PT = [8,10,12,14,16];
 const VENT = { medit:[14,40], canasta:[12,40], parr:[14,28] };
+
+// ── Ventanas de sector, por local ────────────────────────────────────────────
+// Hasta la v6.73 la ventana de cada sector era una constante igual para los 92
+// locales: mediterranea 07:00-20:00 y canasta 06:00-20:00. En un local que abre
+// a las 06:00 eso dejaba a mediterranea aportando 0 en la primera hora, y la
+// tabla de cobertura mostraba 2 personas donde el local necesita 3 (linea +
+// canasta + mediterranea). El piso minimo de 1 por sector ya existia y estaba
+// bien: lo que fallaba era la ventana.
+// Ahora cada local declara desde y hasta que hora abre cada uno de SUS sectores,
+// y la herramienta no deja generar el horario hasta que esas ventanas esten
+// confirmadas. VENT queda solo como valor de arranque.
+let VENT_LOC = null;      // {medit:[slot,slot], canasta:[...], parr:[...]}
+// VENT (arriba) ya no dimensiona ningun local: solo sostiene las estimaciones
+// previas —mix ideal, piso de full time— mientras el gerente todavia no cargo
+// el horario real de sus sectores. No se muestra en pantalla.
+const CLAVE_SEC = { 'mediterráneo':'medit', 'canasta':'canasta', 'parrillada':'parr' };
+function ventOf(k){
+  const v = VENT_LOC && VENT_LOC[k];
+  return (Array.isArray(v) && v.length===2 && v[1]>v[0]) ? v : VENT[k];
+}
+// NO hay valor de arranque. Medido sobre los 33 locales con sectores, arrancar
+// la ventana igual al horario del local infla la demanda +9,7% en cadena y hasta
+// +24% en un local de 24 horas, porque deja un sector de comida abierto toda la
+// madrugada. Y la ventana estandar vieja se queda corta en los locales que abren
+// antes: ese era justamente el reclamo. Ningun valor por defecto sirve para los
+// 92 locales, asi que el horario de sector se pide y no se supone.
+// ¿Estan cargadas todas las ventanas de los sectores de este local?
+function ventanasListas(){
+  const secs = sectoresActuales();
+  if(!secs.length) return true;
+  for(const n of secs){
+    const v = VENT_LOC && VENT_LOC[CLAVE_SEC[n]];
+    if(!(Array.isArray(v) && v.length===2 && v[1]>v[0])) return false;
+    if(n === 'parrillada' && !parrListos()) return false;
+  }
+  return true;
+}
+function listaY(a){
+  if(a.length<=1) return a.join('');
+  return a.slice(0,-1).join(', ') + ' y ' + a[a.length-1];
+}
+function faltanSectores(){
+  return sectoresActuales().filter(n=>{
+    const v = VENT_LOC && VENT_LOC[CLAVE_SEC[n]];
+    if(!(Array.isArray(v) && v.length===2 && v[1]>v[0])) return true;
+    return (n === 'parrillada' && !parrListos());
+  });
+}
 const ESTADOS = ['Activo','Vacaciones','Suspendido','Licencia médica','Reposo','Baja','Otro'];
 const CONDICIONES = {
   'Normal':     {desde:null, hasta:null, dias:[1,1,1,1,1,1,1]},
@@ -2393,7 +2517,7 @@ function normalizarEmpleado(e){
   // si el local no tiene ese sector (o cambió de local), se vuelve a Automático
   if(e.sector && e.sector !== 'línea'){
     const loc = DATA[document.getElementById('localSel') ? document.getElementById('localSel').value : ''];
-    if(loc && !sectoresLocal(loc).includes(e.sector)) e.sector = null;
+    if(loc && !sectoresAsignables(loc).includes(e.sector)) e.sector = null;
   }
   if(!CONDICIONES[e.cond]) e.cond = 'Normal';   // condiciones que ya no existen
   if(e.cond === 'Maternidad' && !MATERNIDAD[e.matEtapa]) e.matEtapa = MAT_DEFAULT;
@@ -2487,6 +2611,68 @@ function aplicar24(){
   const c=document.getElementById('chk24');  if(c) c.checked = ABIERTO24;
 }
 
+// ── pantalla de ventanas de sector ──────────────────────────────────────────
+function pintarSectores(){
+  const box=document.getElementById('boxSectores'); if(!box) return;
+  const secs=sectoresActuales();
+  if(!secs.length){ box.style.display='none'; return; }
+  box.style.display='';
+  const g=document.getElementById('gridSectores');
+  const DIAS3=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  g.innerHTML = secs.map(n=>{
+    const k=CLAVE_SEC[n], v=(VENT_LOC||{})[k];
+    const ok=Array.isArray(v)&&v.length===2&&v[1]>v[0];
+    let h = '<span style="display:inline-block; white-space:nowrap">'
+      + '<label style="text-transform:capitalize">'+n+':</label> '
+      + '<input type="time" step="1800" id="secA_'+k+'" value="'+(ok?slotToInput(v[0]):'')+'"> – '
+      + '<input type="time" step="1800" id="secB_'+k+'" value="'+(ok?slotToInput(v[1]):'')+'">';
+    if(n === 'parrillada'){
+      const pd = parrDias();
+      h += '<span style="margin-left:10px">días:</span> '
+        + DIAS3.map((d,i)=>'<label style="margin:0 5px 0 0; font-weight:400; cursor:pointer">'
+            + '<input type="checkbox" id="parrD_'+i+'"'+(pd[i]?' checked':'')
+            + ' style="vertical-align:-2px; margin-right:2px">'+d+'</label>').join('');
+    }
+    return h + '</span>';
+  }).join('');
+  const tocado = ()=>{ leerSectores(); notaSectores(); RESULTADO=null; autoguardar(); };
+  for(const n of secs){ const k=CLAVE_SEC[n];
+    for(const p of ['secA_','secB_']){
+      const el=document.getElementById(p+k); if(el) el.addEventListener('change', tocado);
+    }
+  }
+  for(let i=0;i<7;i++){ const el=document.getElementById('parrD_'+i); if(el) el.addEventListener('change', tocado); }
+  notaSectores();
+}
+function leerSectores(){
+  const secs=sectoresActuales(); if(!secs.length) return;
+  const v = {};
+  for(const n of secs){
+    const k=CLAVE_SEC[n];
+    const ea=document.getElementById('secA_'+k), eb=document.getElementById('secB_'+k);
+    if(!ea||!eb) continue;
+    const a=hmToSlot(ea.value), b=hmToSlot(eb.value);
+    if(a!==null&&a!==undefined&&b!==null&&b!==undefined&&b>a) v[k]=[a,b];
+  }
+  if(secs.indexOf('parrillada') >= 0){
+    const pd=[0,0,0,0,0,0,0];
+    for(let i=0;i<7;i++){ const el=document.getElementById('parrD_'+i); if(el && el.checked) pd[i]=1; }
+    v.parrDias = pd;
+  }
+  VENT_LOC = v;                       // lo que no esta cargado, no se supone
+}
+function notaSectores(){
+  const el=document.getElementById('secNota'); if(!el) return;
+  const f=faltanSectores();
+  const pq = sectoresActuales().indexOf('parrillada')>=0
+    ? ' <b>La parrillada no se le asigna a nadie en Mi equipo</b>: la cubre quien esté trabajando los días que marques, y en el horario le aparece sólo esos días.'
+    : '';
+  el.innerHTML = (f.length
+    ? '<b>Falta cargar el horario de: '+listaY(f)+'.</b> Sin eso no se puede generar el horario — '
+      + 'de este dato sale la regla de una persona como mínimo en cada sector mientras está abierto.'
+    : 'Listo. La dotación ya contempla una persona como mínimo en cada sector dentro de ese horario.') + pq;
+}
+
 function cargarHorarios(local){
   const o=Math.round(local.open*2), c=Math.round(local.close*2);
   ABIERTO24 = !!local.is24;                       // arranca con lo que dice el dato
@@ -2506,6 +2692,10 @@ function cargarHorarios(local){
     document.getElementById('doClose').value=slotToInput(Math.max(o+2,c-1));
   }
   aplicar24();
+  // cada local tiene sus propios sectores y su propio horario de sector: al
+  // cambiar de local los campos vuelven a quedar vacios y se vuelven a pedir
+  VENT_LOC = {};
+  pintarSectores();
 }
 function horariosDia(local){
   if(es24()) return {opd:new Array(7).fill(0), cld:new Array(7).fill(48)};
@@ -2567,14 +2757,14 @@ function buildReqSemana(local, w, opd, cld){
       const minLin=MIN_ABIERTO, exSec=EXIGIR_SECTORES;
       let tot=Math.max(Math.round(curvaDia(local,'linea',w,d,h)*fEv), minLin);
       if(local.hasMedit||local.hasPatio){
-        const [a,b]=clip(VENT.medit); const rM=Math.round(curvaDia(local,'medit',w,d,h)*fEv);
+        const [a,b]=clip(ventOf('medit')); const rM=Math.round(curvaDia(local,'medit',w,d,h)*fEv);
         tot += (exSec && s>=a&&s<b) ? Math.max(rM,1) : rM;
       }
       if(local.hasCanasta){
-        const [a,b]=clip(VENT.canasta); const rC=Math.round(curvaDia(local,'canasta',w,d,h)*fEv);
+        const [a,b]=clip(ventOf('canasta')); const rC=Math.round(curvaDia(local,'canasta',w,d,h)*fEv);
         tot += (exSec && s>=a&&s<b) ? Math.max(rC,1) : rC;
       }
-      if(local.hasParr&&(d===5||d===6)){const [a,b]=clip(VENT.parr); if(s>=a&&s<b) tot+=1;}
+      if(local.hasParr && parrAbre(d)){const [a,b]=clip(ventOf('parr')); if(s>=a&&s<b) tot+=1;}
       req[d][s]=tot;
     }
   }
@@ -2639,6 +2829,68 @@ function asignarEquipo(local){
   // no se mueva porque sí: entre dos opciones que cubren igual, gana quedarse.
   let ANCLA=null;
   const BON=0.1;       // 6 días x 0.1 < 1 slot de cobertura: sólo desempata
+
+  // Francos ya tomados por la gente de cada sector, dentro del plan que se esta
+  // armando. Se reinicia en cada plan (cada combinacion de gente presente).
+  let FRANCO_SEC = {};
+  // Grupo al que pertenece una persona para repartir el dia libre. Los
+  // sectoristas de un mismo sector no libran juntos, y los nocturnos de un mismo
+  // local tampoco: si los dos nocturnos libran el mismo dia hay que cubrir dos
+  // noches a la vez y ninguna persona puede hacer las dos.
+  function grupoFranco(emp){
+    if(!emp) return null;
+    if(emp.cond === 'Nocturno') return '__nocturno';
+    return emp.sector || null;
+  }
+  function registrarFranco(emp, asig){
+    const g = grupoFranco(emp);
+    if(!g || !asig || !asig.length) return;
+    for(let d=0; d<7; d++){
+      if(!asig.some(a=>a.d===d)){
+        (FRANCO_SEC[g] = FRANCO_SEC[g] || []).push(d);
+        return;                      // el primer dia sin turno es su dia libre
+      }
+    }
+  }
+
+  // ── Reparto de los sectoristas ─────────────────────────────────────────────
+  // A quien el gerente fijo a un sector se le pide que entre cerca de SU tramo
+  // de la ventana del sector, no donde mas convenga a la linea de cajas. Con una
+  // sola persona el objetivo es la apertura del sector; con dos, una abre y la
+  // otra cierra; con tres, se reparten en tres. Es una preferencia con juego de
+  // una hora: si no hay ningun turno legal cerca del objetivo, la persona se
+  // asigna como siempre y no se la deja sin horario.
+  const SEC_TOL = 2;                       // 1 hora de juego alrededor del objetivo
+  const OBJ_SEC = new Map();               // empleado -> {nom, t, dias}
+  (function(){
+    for(const nom of sectoresAsignables(local)){
+      const win = ventOf(CLAVE_SEC[nom]);
+      const gente = EQUIPO.filter(e => e && e.sector === nom);
+      if(!gente.length) continue;
+      const dias = [0,1,2,3,4,5,6];
+      // El reparto se hace sobre el tramo de la ventana que este grupo REALMENTE
+      // puede trabajar: la ventana cruzada con la disponibilidad de la gente y
+      // descontando el largo del turno. Sin esto, en un local de 24 horas el
+      // objetivo de la segunda persona caia a las 15:00 con salida a medianoche,
+      // fuera de su disponibilidad, no habia ningun turno legal cerca y el
+      // reparto se caia: las dos terminaban entrando a la misma hora.
+      let lo = win[0], hi = win[1], P = 0;
+      for(const e2 of gente){
+        const ct2 = CONTRATOS[e2.contrato];
+        lo = Math.max(lo, e2.desde);
+        hi = Math.min(hi, e2.hasta);
+        P  = Math.max(P, (ct2 && ct2.tipo === 'FT') ? jornadaFT(e2).pres : 8);
+      }
+      hi = hi - P;
+      if(hi < lo) hi = lo;
+      for(let k=0; k<gente.length; k++){
+        const t = gente.length > 1
+          ? lo + Math.round((hi - lo) * k / (gente.length - 1))
+          : lo;
+        OBJ_SEC.set(gente[k], {nom, t, dias});
+      }
+    }
+  })();
   const openG=Math.min(...opd), closeG=Math.max(...cld);
   // el más tardío de los cierres extendidos: hasta acá puede llegar un turno
   const closeExt=Math.max(...[0,1,2,3,4,5,6].map(d=>cierreExt(d,opd,cld)));
@@ -2717,7 +2969,16 @@ function asignarEquipo(local){
   // reemplazo del nocturno que está de franco: la noche no se negocia contra la
   // cobertura del día, es una obligación. El resto de su semana se optimiza
   // alrededor de ese turno, respetando las 12 hs de descanso.
-  function mejorFT(emp, forz){
+  // forzList = [{d, e}, ...] : noches que esa persona TIENE que cubrir. Antes
+  // era una sola; ahora el soporte nocturno de la semana puede llevarse todas
+  // las noches vacantes, que es como se arma el horario en el local.
+  function mejorFT(emp, forzList){
+    const FZ = {};
+    if(forzList){
+      const lista0 = Array.isArray(forzList) ? forzList : [forzList];
+      for(const f of lista0) FZ[f.d] = f;
+    }
+    const forzDias = Object.keys(FZ).map(Number);
     const J=jornadaFT(emp), P=J.pres, LEN=J.len;
     // en jornada reducida no se parte el turno: el sentido de la reducción es que
     // la persona esté menos tiempo en el local, no que venga dos veces por día
@@ -2728,7 +2989,8 @@ function asignarEquipo(local){
     const ops=[];
     for(let d=0;d<7;d++){
       const lista=[];
-      if(forz && forz.d===d){
+      const forz = FZ[d];
+      if(forz){
         // Jornada NOCTURNA: 7 hs de trabajo, 8 de presencia. Es la misma que hace
         // el nocturno titular, porque el tope de 7 hs es de la jornada y no de la
         // persona: el turno cae entero dentro del tramo nocturno. Las 7 hs se
@@ -2775,6 +3037,14 @@ function asignarEquipo(local){
           }
         }
       }
+      // quien esta fijado a un sector entra cerca de su tramo de la ventana
+      const ob = OBJ_SEC.get(emp);
+      if(ob && ob.dias.includes(d) && lista.length){
+        for(const tol of [SEC_TOL, SEC_TOL*2, SEC_TOL*3]){
+          const cerca = lista.filter(o => Math.abs(o.entry - ob.t) <= tol);
+          if(cerca.length){ lista.length = 0; for(const o of cerca) lista.push(o); break; }
+        }
+      }
       ops.push(lista);
     }
     const diasTrab=[]; for(let d=0;d<7;d++) if(ops[d].length) diasTrab.push(d);
@@ -2785,7 +3055,31 @@ function asignarEquipo(local){
     let francos = diasTrab.length>=7 ? [0,1,2,3,4,5,6] : [0,1,2,3,4,5,6].filter(d=>!diasTrab.includes(d));
     // El turno forzado no puede caer en el franco: si no, el DP lo descarta —
     // una noche cubre casi nada de demanda— y el reemplazo se pierde en silencio.
-    if(forz) francos = francos.filter(d=>d!==forz.d);
+    if(forzDias.length){
+      // El dia libre de quien hace el soporte nocturno va JUSTO DESPUES de su
+      // ultima noche: termina a las 05:00 y ese dia descansa. Si cubrio lunes y
+      // martes, libra el miercoles. Con noches sueltas se toma el final de la
+      // racha mas larga que deje un dia libre utilizable.
+      const set = new Set(forzDias);
+      let fr = -1;
+      for(const d of forzDias){
+        const n = (d+1)%7;
+        if(!set.has(n) && francos.indexOf(n) >= 0){ fr = n; break; }
+      }
+      if(fr >= 0) francos = [fr];
+      else francos = francos.filter(d => !set.has(d));
+    }
+    // Dos personas del mismo sector no libran el mismo dia: si salen las dos
+    // juntas, ese dia el sector se queda sin ninguno de sus titulares y lo tiene
+    // que cubrir entero la linea de cajas. Es una preferencia, no una pared: si
+    // no queda ningun dia libre para esta persona, se la deja elegir igual antes
+    // que dejarla sin horario.
+    const _gf = grupoFranco(emp);
+    if(_gf && FRANCO_SEC[_gf] && francos.length > 1){
+      const propios = FRANCO_SEC[_gf];
+      const libres = francos.filter(d => propios.indexOf(d) < 0);
+      if(libres.length) francos = libres;
+    }
     if(!francos.length) return null;
     for(const f of francos){
       const dias6=[];
@@ -2860,6 +3154,7 @@ function asignarEquipo(local){
   //            full time elijan; los full time se reacomodan sobre lo que queda.
   function construir(presentes, reqObj, base, wk){
   residual = (reqObj||reqProm).map(r=>r.map(v=>Math.round(v)));
+  FRANCO_SEC = {};          // cada plan reparte los francos de sector desde cero
   DESC_OCU = Array.from({length:7},()=>new Array(48).fill(0));
   const FIJO={}, ANC={};
   // Horario de contrato declarado por el gerente. No se optimiza: se coloca tal
@@ -2912,9 +3207,34 @@ function asignarEquipo(local){
     }
     return mejor;
   }
+  // Cuantas noches, como maximo, se le cargan al soporte de la semana. Hace esas
+  // noches mas su dia libre; el resto de la semana lo trabaja de dia.
+  const TOPE_NOC_SOPORTE = 3;
+  // El soporte de la semana: el full time diurno que menos noches lleva cubiertas
+  // en el mes, arrancando en un punto distinto de la lista segun la semana para
+  // que no sea siempre el mismo.
+  function elegirSoporte(){
+    const cands = candidatosReemp();
+    if(!cands.length) return -1;
+    const off = ((wk||0) % cands.length);
+    const rot = cands.slice(off).concat(cands.slice(0,off));
+    let mejor=-1, mv=1e9;
+    for(const j of rot){ const v = REEMP_MES[j]||0; if(v<mv){ mv=v; mejor=j; } }
+    return mejor;
+  }
+  // Todas las noches vacantes de la semana van al mismo soporte. Lo que no le
+  // entre —porque ese dia no trabaja o porque pasa el tope— se reparte entre los
+  // demas, igual que antes.
   function repartirNoches(){
     const mapa={};
-    for(const n of NOCHES){ const j=elegirPara(n, mapa); if(j>=0) mapa[j]=n; }
+    const sop = elegirSoporte();
+    const sobran=[];
+    for(const n of NOCHES){
+      if(sop>=0 && EQUIPO[sop].dias[n.d] && (mapa[sop]||[]).length < TOPE_NOC_SOPORTE){
+        (mapa[sop] = mapa[sop] || []).push(n);
+      } else sobran.push(n);
+    }
+    for(const n of sobran){ const j=elegirPara(n, mapa); if(j>=0) mapa[j]=[n]; }
     return mapa;
   }
   function noches_de(q, emp){
@@ -2934,11 +3254,13 @@ function asignarEquipo(local){
         const [dd,ss]=diaSlot(a.d,s); if(residual[dd][ss]>0) residual[dd][ss]--; } }
       pos.push({emp:i, nombre:emp.nombre, ct, contrato:emp.contrato,
                 asig:_as, sinHorario:false, declarado:true});
+      registrarFranco(emp, _as);
       continue;
     }
     if(base && FIJO[i] && presentes[i]){
       pos.push({emp:i, nombre:emp.nombre, ct, contrato:emp.contrato,
                 asig:FIJO[i].map(a=>Object.assign({},a)), sinHorario:!FIJO[i].length});
+      registrarFranco(emp, FIJO[i]);
       continue;
     }
     if(!presentes[i]){
@@ -2951,19 +3273,29 @@ function asignarEquipo(local){
       let tomo=null;
       if(emp.cond!=='Nocturno' && NOCHES.length && !YA_REEMP[i]){
         if(PLAN_REEMP===null) PLAN_REEMP=repartirNoches();
-        const propia=PLAN_REEMP[i];
-        if(propia && NOCHES.indexOf(propia)>=0 && emp.dias[propia.d]){
-          const cand=mejorFT(emp, propia);
-          if(cand && cand.asig.some(a=>a.d===propia.d && a.e===propia.e)){ r=cand; tomo=propia; }
-          else {
-            // a esta persona no le entra: la noche pasa al siguiente que pueda
-            delete PLAN_REEMP[i];
-            const j=elegirPara(propia, PLAN_REEMP, orden.indexOf(i)+1);
-            if(j>=0) PLAN_REEMP[j]=propia;
+        const propias=(PLAN_REEMP[i]||[]).filter(n=>NOCHES.indexOf(n)>=0 && emp.dias[n.d]);
+        if(propias.length){
+          // se intenta con todas las noches juntas; si no le entran, con una sola,
+          // y lo que quede se reparte entre los que vienen despues
+          const entra = (lote)=>{
+            const c=mejorFT(emp, lote);
+            return (c && lote.every(n=>c.asig.some(a=>a.d===n.d && a.e===n.e))) ? c : null;
+          };
+          let cand=entra(propias), lote=propias;
+          if(!cand && propias.length>1){ lote=[propias[0]]; cand=entra(lote); }
+          if(cand){ r=cand; tomo=lote; }
+          const sobran = propias.filter(n=>!cand || lote.indexOf(n)<0);
+          delete PLAN_REEMP[i];
+          for(const n of sobran){
+            const j=elegirPara(n, PLAN_REEMP, orden.indexOf(i)+1);
+            if(j>=0) PLAN_REEMP[j]=[n];
           }
         }
       }
-      if(tomo){ NOCHES.splice(NOCHES.indexOf(tomo),1); YA_REEMP[i]=1; REEMP_MES[i]=(REEMP_MES[i]||0)+1; }
+      if(tomo){
+        for(const n of tomo){ const k=NOCHES.indexOf(n); if(k>=0) NOCHES.splice(k,1); }
+        YA_REEMP[i]=1; REEMP_MES[i]=(REEMP_MES[i]||0)+tomo.length;
+      }
       else r=mejorFT(emp);
       if(emp.cond==='Nocturno' && r) noches_de({asig:r.asig}, emp);
     }
@@ -2984,6 +3316,7 @@ function asignarEquipo(local){
     if(r){
       for(const a of r.asig){ marcarDesc(a); for(const s of slotsCub(a)){ const [dd,ss]=diaSlot(a.d,s); if(residual[dd][ss]>0) residual[dd][ss]--; } }
       pos.push({emp:i, nombre:emp.nombre, ct, contrato:emp.contrato, asig:r.asig, sinHorario:false});
+      registrarFranco(emp, r.asig);
     } else {
       pos.push({emp:i, nombre:emp.nombre, ct, contrato:emp.contrato, asig:[], sinHorario:true});
     }
@@ -3337,10 +3670,34 @@ function sectoresLocal(local){
 function sectoresActuales(){
   return sectoresLocal(DATA[document.getElementById('localSel').value]);
 }
+// Sectores que se le pueden FIJAR a una persona. La parrillada queda afuera a
+// propósito: abre uno o dos días a la semana, así que nadie "es de parrillada".
+// La cubre quien esté trabajando ese día, y en el horario aparece sólo ese día.
+function sectoresAsignables(local){
+  return sectoresLocal(local).filter(n => n !== 'parrillada');
+}
+function asignablesActuales(){
+  return sectoresAsignables(DATA[document.getElementById('localSel').value]);
+}
+// Días en que abre la parrillada de este local, declarados por el gerente.
+function parrDias(){
+  const v = VENT_LOC && VENT_LOC.parrDias;
+  return (Array.isArray(v) && v.length === 7) ? v : [0,0,0,0,0,0,0];
+}
+function parrAbre(d){ return !!parrDias()[d]; }
+function parrListos(){ return parrDias().some(x=>!!x); }
 // Ventana horaria de cada sector, en texto, para explicarla en pantalla
 function ventanaSector(nom){
-  const v = nom==='mediterráneo' ? VENT.medit : nom==='canasta' ? VENT.canasta : VENT.parr;
-  return slotToHM(v[0]) + '–' + slotToHM(v[1]) + (nom==='parrillada' ? ' · sáb y dom' : '');
+  const k = CLAVE_SEC[nom] || 'medit';
+  const v = (VENT_LOC||{})[k];
+  if(!(Array.isArray(v) && v.length===2 && v[1]>v[0])) return 'sin cargar';
+  let txt = slotToHM(v[0]) + '–' + slotToHM(v[1]);
+  if(nom === 'parrillada'){
+    const D=['lun','mar','mié','jue','vie','sáb','dom'], pd=parrDias();
+    const ds=D.filter((x,i)=>pd[i]);
+    txt += ds.length ? (' · ' + ds.join(' y ')) : ' · sin días marcados';
+  }
+  return txt;
 }
 
 // ---------- etiquetas de sector ----------
@@ -3382,6 +3739,13 @@ const SEC_REFUERZO_MAX = 1;
 // minutos no es ejecutable en el local: se pide 1 hora como piso.
 const SEC_REFUERZO_MIN = 2;
 
+// Cuantos sectores distintos puede cubrir una persona en una misma jornada.
+// Cada cambio de sector obliga a cerrar una caja, abrir otra y volver a
+// loguearse: tres sectores en un dia es media hora de la jornada perdida en
+// movimientos y una caja que abre y cierra sola tres veces. Ademas de este
+// tope, cada sector va en UN bloque continuo: no se sale y se vuelve.
+const SEC_MAX_DIA = 2;
+
 // Demanda fraccionaria promedio del tramo, por día y media hora, sin redondear.
 // Se promedian las semanas del tramo, igual que reqProm, así que es la misma
 // base con la que se dimensiona todo lo demás.
@@ -3401,9 +3765,9 @@ function etiquetar(pos, opd, cld, local){
   const avisos = [];    // refuerzos que el local no puede dar sin descubrir línea
   let refuerzos = 0;    // refuerzos efectivamente colocados
   const esp=[];
-  if(local.hasParr) esp.push({nombre:'parrillada', dias:[5,6], win:VENT.parr, campo:null});
-  if(local.hasMedit||local.hasPatio) esp.push({nombre:'mediterráneo', dias:[0,1,2,3,4,5,6], win:VENT.medit, campo:'medit'});
-  if(local.hasCanasta) esp.push({nombre:'canasta', dias:[0,1,2,3,4,5,6], win:VENT.canasta, campo:'canasta'});
+  if(local.hasParr) esp.push({nombre:'parrillada', dias:[0,1,2,3,4,5,6].filter(parrAbre), win:ventOf('parr'), campo:null});
+  if(local.hasMedit||local.hasPatio) esp.push({nombre:'mediterráneo', dias:[0,1,2,3,4,5,6], win:ventOf('medit'), campo:'medit'});
+  if(local.hasCanasta) esp.push({nombre:'canasta', dias:[0,1,2,3,4,5,6], win:ventOf('canasta'), campo:'canasta'});
   pos._secAvisos = avisos; pos._secRefuerzos = 0;
   if(!esp.length) return;
 
@@ -3418,6 +3782,19 @@ function etiquetar(pos, opd, cld, local){
     const fijo = a => { const e = EQUIPO[a._emp]; return (e && e.sector) ? e.sector : null; };
     for(const a of presentes) a._sec=new Array(Math.max(48, a.e+a.pres)).fill(null);
 
+    // ¿puede esta persona tomar este tramo de este sector?
+    //   · el tramo tiene que estar libre
+    //   · no puede quedarse con mas de SEC_MAX_DIA sectores distintos en el dia
+    //   · si ya tiene ese sector, el tramo nuevo tiene que pegar con el que tiene
+    const secsDe = a => { const o={}; for(const x of a._sec) if(x) o[x]=1; return Object.keys(o); };
+    const puedeBloque = (a, ini, fin, nom) => {
+      if(fin<=ini) return false;
+      for(let s=ini;s<fin;s++) if(a._sec[s]!==null) return false;
+      const act = secsDe(a);
+      if(act.indexOf(nom) < 0) return act.length < SEC_MAX_DIA;
+      return (ini>0 && a._sec[ini-1]===nom) || (a._sec[fin]===nom);
+    };
+
     // ── 1. LA BASE: una persona por sector, toda su ventana (como siempre) ────
     const abiertos = [];
     for(const e of esp){
@@ -3428,24 +3805,33 @@ function etiquetar(pos, opd, cld, local){
       const falta=new Array(48).fill(false);
       for(let s=w0;s<w1;s++) falta[s]=true;
       let quedan=w1-w0, g=0;
-      // los que el gerente fijó a ESTE sector entran primero, sí o sí
+      // los que el gerente fijó a ESTE sector entran primero, sí o sí, y toman
+      // todo el cruce de su turno con la ventana de una sola vez
       for(const a of presentes){
         if(fijo(a) !== e.nombre) continue;
-        for(let s=Math.max(a.e,w0);s<Math.min(a.e+a.pres,w1);s++)
-          if(a._sec[s]===null){ a._sec[s]=e.nombre; if(falta[s]){ falta[s]=false; quedan--; } }
+        const lo=Math.max(a.e,w0), hi=Math.min(a.e+a.pres,w1);
+        if(!puedeBloque(a, lo, hi, e.nombre)) continue;
+        for(let s=lo;s<hi;s++){ a._sec[s]=e.nombre; if(falta[s]){ falta[s]=false; quedan--; } }
       }
-      // el resto lo completa el sistema, salteando a los fijados a otra cosa
-      while(quedan>0&&g++<10){
-        let mejor=null,mc=-1;
+      // el resto lo completa el sistema, salteando a los fijados a otra cosa.
+      // Se busca el BLOQUE CONTINUO mas largo que alguien pueda tomar — antes se
+      // repartian slots sueltos y por eso una misma persona entraba y salia del
+      // mismo sector varias veces en el dia.
+      while(quedan>0&&g++<20){
+        let mejor=null, mIni=0, mFin=0, mc=0;
         for(const a of presentes){
           if(fijo(a) && fijo(a) !== e.nombre) continue;
-          let c=0;
-          for(let s=Math.max(a.e,w0);s<Math.min(a.e+a.pres,w1);s++) if(falta[s]&&a._sec[s]===null) c++;
-          if(c>mc){mc=c;mejor=a;}
+          const lo=Math.max(a.e,w0), hi=Math.min(a.e+a.pres,w1);
+          let s=lo;
+          while(s<hi){
+            if(a._sec[s]!==null || !falta[s]){ s++; continue; }
+            let f=s; while(f<hi && a._sec[f]===null && falta[f]) f++;
+            if(f-s>mc && puedeBloque(a,s,f,e.nombre)){ mc=f-s; mejor=a; mIni=s; mFin=f; }
+            s=f;
+          }
         }
         if(!mejor||mc<=0) break;
-        for(let s=Math.max(mejor.e,w0);s<Math.min(mejor.e+mejor.pres,w1);s++)
-          if(falta[s]&&mejor._sec[s]===null){mejor._sec[s]=e.nombre;falta[s]=false;quedan--;}
+        for(let s=mIni;s<mFin;s++){ mejor._sec[s]=e.nombre; falta[s]=false; quedan--; }
       }
     }
 
@@ -3477,9 +3863,9 @@ function etiquetar(pos, opd, cld, local){
             for(const a of presentes){
               if(fijo(a) && fijo(a)!==e.nombre) continue;
               if(a.e>s || a.e+a.pres<f) continue;
-              let libre=true;
-              for(let t=s;t<f;t++) if(a._sec[t]!==null){ libre=false; break; }
-              if(!libre) continue;
+              // el refuerzo no puede romper el tope de sectores del dia ni partir
+              // en dos un sector que esa persona ya esta cubriendo
+              if(!puedeBloque(a, s, f, e.nombre)) continue;
               const carga = a._sec.filter(x=>x!==null).length;
               if(carga < mejorCarga){ mejorCarga=carga; cand=a; }
             }
@@ -4701,7 +5087,7 @@ function renderEquipo(){
         ? 'Presencia diaria, descanso de 1 h incluido. Pasados los 2 años poné <b>Normal</b>.'
         : 'Ojo: la reducción está definida sobre la jornada completa. En un part time el motor no la aplica — validá el caso con RRHH.'}</div>`:''}</td>
     <td>${(()=>{
-      const secs = sectoresActuales();
+      const secs = asignablesActuales();
       if(!secs.length) return '<span class="small">sin sectores</span>';
       return `<select data-eq="${i}" data-f="sector" style="min-width:132px">
         <option value="" ${!e.sector?'selected':''}>Automático</option>
@@ -4991,6 +5377,7 @@ function estadoActual(){
     horarios:{ls:[document.getElementById('lsOpen').value,document.getElementById('lsClose').value],
               dom:[document.getElementById('doOpen').value,document.getElementById('doClose').value]},
     abierto24: ABIERTO24, swaps: SWAPS,
+    ventanas: VENT_LOC,
     ausentismo:+document.getElementById('ausentismo').value,
     corte:[+document.getElementById('corteMin').value, +document.getElementById('corteMax').value],
     mes:MES_SEL, anio:ANIO_SEL,
@@ -5071,6 +5458,20 @@ function aplicarCfg(cfg, avisar){
         if(cfg.horarios.dom[0])document.getElementById('doOpen').value=cfg.horarios.dom[0];
         if(cfg.horarios.dom[1])document.getElementById('doClose').value=cfg.horarios.dom[1];
       }
+      // ventanas de sector guardadas. Un archivo anterior a la v6.73 no las
+      // trae: queda el valor de arranque (el horario del local) y la casilla
+      // sin confirmar, así que la herramienta se las vuelve a pedir.
+      if(cfg.ventanas && typeof cfg.ventanas==='object'){
+        const vv={};
+        for(const k of ['medit','canasta','parr']){
+          const r=cfg.ventanas[k];
+          if(Array.isArray(r)&&r.length===2&&r[1]>r[0]) vv[k]=[+r[0],+r[1]];
+        }
+        const pd=cfg.ventanas.parrDias;
+        if(Array.isArray(pd) && pd.length===7) vv.parrDias = pd.map(x=>x?1:0);
+        VENT_LOC = vv;
+      }
+      pintarSectores();
       SWAPS = Array.isArray(cfg.swaps) ? cfg.swaps : [];
       if(cfg.abierto24 !== undefined && DATA[document.getElementById('localSel').value].is24){
         ABIERTO24 = !!cfg.abierto24; aplicar24();
@@ -5139,6 +5540,19 @@ function revisarEquipo(){
 }
 function generar(){
   if(!EQUIPO.length){alert('Cargá tu equipo primero (Cantidad de personas → Aplicar).');return;}
+  // El horario de los sectores no tiene valor por defecto que sirva: de el sale
+  // el piso de una persona por sector, y con la ventana mal el local aparece
+  // con menos gente de la que realmente necesita en la apertura.
+  if(!ventanasListas()){
+    alert('Antes de generar, cargá el horario de: '+listaY(faltanSectores())+'.\n\n'
+        + 'La herramienta necesita saber desde y hasta qué hora abre cada sector de tu local '
+        + 'para exigir una persona como mínimo en cada uno mientras está abierto.\n\n'
+        + 'Está en Configuración, abajo del horario del local.');
+    setTab('config');
+    const b=document.getElementById('boxSectores');
+    if(b) b.scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
   if(!_generarSinSaltar){
     const av = revisarEquipo(), firma = av.join('|');
     // se pregunta una sola vez por cada combinación de avisos: si el gerente ya
@@ -5206,7 +5620,12 @@ document.getElementById('btnMiClave').addEventListener('click', ()=>{
 });
 document.getElementById('cvCancel').addEventListener('click', ()=>{ document.getElementById('capaClave').style.display='none'; });
 document.getElementById('cvBtn').addEventListener('click', guardarClave);
-sel.addEventListener('change',()=>{ cargarHorarios(DATA[sel.value]); RESULTADO=null; IDEAL_POS=null; IDEAL_ROT=null; RANK_CACHE=null; FALTAS=[]; SWAPS=[]; resetSimBajas(); renderHorarios(); refrescarIdeal(); });
+sel.addEventListener('change',()=>{ cargarHorarios(DATA[sel.value]); RESULTADO=null; IDEAL_POS=null; IDEAL_ROT=null; RANK_CACHE=null; FALTAS=[]; SWAPS=[]; resetSimBajas();
+  // la columna Sector de Mi equipo se arma con los sectores del local: al
+  // cambiar de local hay que volver a pintarla, y soltar el sector fijado a
+  // alguien si el local nuevo no lo tiene.
+  for(const e of EQUIPO) normalizarEmpleado(e);
+  renderEquipo(); renderHorarios(); refrescarIdeal(); });
 document.getElementById('btnEquipo').addEventListener('click',aplicarEquipo);
 document.getElementById('btnPiso').addEventListener('click', calcularPiso);
 renderCtChecks();

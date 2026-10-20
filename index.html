@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Horario del Local · Dotación Actual · v6.89</title>
+<title>Horario del Local · Dotación Actual · v6.95</title>
 <style>
   :root{
     /* La herramienta es de tema claro. Sin esto, un navegador en modo oscuro dibuja
@@ -204,6 +204,20 @@
   #gerFrame{flex:1; width:100%; border:0; background:#f4f7fa;}
   #gerCargando{padding:40px 28px; color:var(--muted);}
 
+  /* ventana del mix ideal: bordes marcados para que no se confunda con el fondo */
+  /* ocupa toda la pantalla: el mix se mira entero, con su propio scroll */
+  #capaMix{position:fixed; inset:0; z-index:10000; background:var(--bg); display:none;
+    flex-direction:column; overflow:hidden;}
+  #capaMix .mcaja{background:var(--panel); border:0; border-radius:0; width:100%; max-width:none; height:100%; max-height:none;
+    display:flex; flex-direction:column; min-height:0;}
+  #capaMix .mtop{flex:0 0 auto; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    padding:13px 20px; color:#fff; border-bottom:3px solid var(--rt-amar);
+    background:linear-gradient(100deg, var(--rt-azul-osc) 0%, var(--rt-azul) 60%, var(--rt-azul-cla) 100%);}
+  #capaMix .mtop h2{color:#fff; font-size:17px; border:0; margin:0;}
+  #capaMix .mtop .small{color:#d6e9f8;}
+  #capaMix #mixCuerpo{flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden;
+    padding:16px 20px 60px; background:var(--bg);}
+
   /* comparador de locales (sólo Administración) */
   #capaComp{position:fixed; inset:0; z-index:10000; background:rgba(31,42,38,.55); display:none; align-items:center; justify-content:center; padding:20px;}
   #capaComp .mcaja{max-width:1280px;}
@@ -378,6 +392,18 @@
   </div>
   <div id="gerCargando">Abriendo la vista gerencial…</div>
   <iframe id="gerFrame" title="Vista Gerencial" style="display:none"></iframe>
+</div>
+
+<div id="capaMix">
+  <div class="mcaja">
+    <div class="mtop">
+      <h2>📅 Horario del mix ideal</h2>
+      <span class="small" style="flex:1">La dotación que el sistema propone para la demanda de este local, repartida hora por hora. Es una referencia: no es tu equipo ni toca tu horario.</span>
+      <button class="btn primary" id="btnMixXls" style="font-weight:700">⬇ Descargar Excel</button>
+      <button class="btn" id="btnMixX" title="Cerrar" style="font-weight:700">✕</button>
+    </div>
+    <div id="mixCuerpo"></div>
+  </div>
 </div>
 
 <div id="capaComp">
@@ -879,6 +905,14 @@ const MANUAL_SECS = [
     <p>Abajo del bloque hay un botón, <b>¿Hay contratos que no conseguís?</b>. Ahí podés destildar los contratos que tu local no puede cubrir en la práctica —nadie quiere 16 horas semanales, por ejemplo— y el mix ideal deja de proponerlos. El full time no se apaga: es el piso que sostiene la apertura y el cierre.</p>
     <p>Cuando hay contratos destildados, la tarjeta muestra <b>las dos cifras</b>: lo que costaría el mix con los seis contratos —que es el número oficial de la cadena— y lo que cuesta con los que marcaste. La diferencia es exactamente <b>cuánto cuesta por mes no conseguir esos contratos</b>, y es el dato que hay que llevarle a RRHH.</p>
     <p class="mnota">El mix más barato se calcula con <b>el mismo motor</b> que la herramienta de Mix de Contratos, así que coincide con el número oficial de la cadena para tu local.</p>` },
+
+  { id:'vermix', t:'Ver el horario del mix ideal', h:()=>`
+    <p>El recuadro <b>Dotación de tu local</b>, en Configuración, te dice cuántas personas y de qué contrato necesitaría este local. Abajo de ese recuadro hay un botón, <b>📅 Ver el horario de este mix</b>, que te muestra <b>cómo quedarían repartidos esos turnos hora por hora</b>, con la misma pantalla que el horario de tu equipo.</p>
+    <p><b>No hace falta cargar el equipo ni generar nada.</b> Sale de la demanda del local, así que se puede mirar entrando y tocando el botón.</p>
+    <p>Se abre <b>a pantalla completa</b>, encima de todo. Adentro tenés las semanas del mes y las mismas dos vistas que el horario de tu equipo: <b>Vista semana</b>, con la tabla de turnos y la comparación de costos, y <b>Vista día (visual)</b>, con la jornada dibujada hora por hora. Se cierra con la <b>✕</b> de arriba a la derecha o con la tecla Escape, y volvés exactamente a donde estabas.</p>
+    <p class="mnota">Abrir esta ventana <b>no desbloquea la pestaña Horarios</b>: esa es el horario de <b>tu equipo</b>, y sigue pidiendo lo de siempre — cargar tu gente en Configuración y tocar Generar horario.</p>
+    <p>Arriba, en la barra azul de la ventana, está el botón <b>⬇ Descargar Excel</b>, que te baja ese mismo mix a una planilla, una hoja por semana. Las filas son <b>puestos</b>, no personas —<i>Puesto 1 · FT · 48h</i>—, porque es la dotación que el sistema propone, no tu equipo. Sirve para mandárselo a alguien o para ponerle nombre a cada puesto.</p>
+    <p class="mnota">Mirarlo <b>no te cambia nada</b>: ni tu equipo, ni tu horario, ni lo que tenías guardado.</p>` },
 
   { id:'horario', t:'Horario del local', h:_horarioLocalTxt },
 
@@ -1458,7 +1492,7 @@ function tourVisto2(loc){
 function restaurarTrabajo(loc){
   const cfg = trabajoGuardado(loc);
   const av = document.getElementById('avisoRestaurado');
-  if(!cfg){ if(av) av.style.display='none'; return; }
+  if(!cfg){ if(av) av.style.display='none'; limpiarTrabajo(); return; }
   try{
     aplicarCfg(cfg, false);
     // el trabajo se restaura igual, pero sin cartel: era una línea más para leer
@@ -1469,6 +1503,29 @@ function restaurarTrabajo(loc){
       renderRotNota(); renderHorarios();
     }
   }catch(e){ if(av) av.style.display='none'; }
+}
+
+// Deja la pantalla como si se entrara por primera vez a este local. Es lo que
+// corresponde cuando el local no tiene nada guardado: mostrarle el equipo del
+// local anterior es peor que no mostrarle nada, porque parece un dato suyo.
+function limpiarTrabajo(){
+  RESTAURANDO = true;
+  try{
+    EQUIPO.length = 0;
+    EVENTOS = []; FALTAS = []; SWAPS = [];
+    RESULTADO = null; IDEAL_POS = null; IDEAL_ROT = null;
+    PISO_ESC = null; _ultimoPiso = null;
+    escenario = 'actual'; vistaActual = 'sem'; semanaActual = 0;
+    ROTATIVO = false;
+    const sr = document.getElementById('selRotativo'); if(sr) sr.value = 'no';
+    const au = document.getElementById('ausentismo'); if(au) au.value = 10;
+    reiniciarFeriados();
+    resetSimBajas();
+    const ne = document.getElementById('nEquipo'); if(ne) ne.value = '';
+    renderFeriados(); renderEquipo(); renderEventos(); renderRotNota();
+    renderHorarios(); refrescarIdeal(); sincronizarPiso(true);
+  }catch(e){ console.warn('limpiarTrabajo', e); }
+  RESTAURANDO = false;
 }
 
 function salir(){
@@ -2320,6 +2377,10 @@ function renderIdealConfig(){
         ? ` · el equipo elegido cuesta <b style="color:${dif>0?'var(--gold)':'var(--accent)'}">${dif>0?'+':'−'}${fmtGsM(Math.abs(dif))}</b>`
         : ' · igual que el equipo elegido'}</div>
       ${restriccion}
+      <div style="margin-top:11px">
+        <button class="btn mini" id="btnVerMix" style="background:var(--rt-azul); color:#fff; border-color:var(--rt-azul); font-weight:700">📅 Ver el horario de este mix</button>
+      </div>
+      <div class="small" style="margin-top:6px">Cómo quedarían repartidos esos turnos, hora por hora. No hace falta cargar el equipo.</div>
     </div>
   </div>`;
 
@@ -2360,6 +2421,112 @@ function renderIdealConfig(){
   if(v2) v2.addEventListener('click', ev=>{ ev.preventDefault(); PISO_ESC=null; sincronizarPiso(true); renderIdealConfig(); });
   const ad = document.getElementById('btnAdoptar');
   if(ad) ad.addEventListener('click', adoptarDotacion);
+  const vm = document.getElementById('btnVerMix');
+  if(vm) vm.addEventListener('click', verMixIdeal);
+
+}
+
+// Abre el horario del mix ideal sin pedir equipo ni horario generado. Si el
+// local ya generó el suyo, no se le toca nada: se cambia de vista y listo.
+// ── Ventana del mix ideal ───────────────────────────────────────────────────
+// Se calcula con la demanda del local, no con el equipo: por eso se puede mirar
+// sin haber cargado a nadie. Y NO toca RESULTADO, así que la pestaña Horarios
+// sigue pidiendo lo de siempre — cargar el equipo y generar el horario.
+let MIX_CTX = null, MIX_SEM = 0;
+
+function mixContexto(){
+  const local = DATA[document.getElementById('localSel').value];
+  if(!local) return null;
+  const d = demandaTramo(local);
+  const pos = optimizarIdeal(d.reqProm, d.opd, d.cld);
+  etiquetar(pos, d.opd, d.cld, local);
+  let rot = null;
+  if(ROTATIVO){
+    rot = planRotadoIdeal(pos, d.opd, d.cld);
+    if(rot) etiquetar(rot.pos, d.opd, d.cld, local);
+  }
+  return { local, opd:d.opd, cld:d.cld, reqSem:d.reqSem, reqProm:d.reqProm, pos, rot,
+           posDe: (w) => (rot && w%2===1) ? rot.pos : pos };
+}
+
+function verMixIdeal(){
+  try{
+    MIX_CTX = mixContexto();
+    if(!MIX_CTX){ alert('Elegí un local primero.'); return; }
+    MIX_SEM = 0; MIX_VISTA = 'sem'; MIX_DIA = 0;
+    renderMix();
+    document.getElementById('capaMix').style.display = 'flex';
+  }catch(err){
+    console.error(err);
+    alert('No pude armar el horario del mix ideal de este local.\n\n' + (err && err.message ? err.message : err));
+  }
+}
+
+let MIX_VISTA = 'sem', MIX_DIA = 0;
+
+function setSemanaMix(i){
+  if(!MIX_CTX) return;
+  MIX_SEM = Math.max(0, Math.min(i, MIX_CTX.reqSem.length-1));
+  renderMix();
+}
+function setVistaMix(v){ MIX_VISTA = v; renderMix(); }
+function setDiaMix(d){ MIX_DIA = +d; renderMix(); }
+
+// Los puestos del mix no tienen nombre: para la vista día se les pone el mismo
+// rótulo que en la tabla semanal (FT 1 · 48h, PT 24h #3) y así las dos vistas
+// hablan de la misma gente.
+function mixRotulado(pos){
+  let iFT = 0, iPT = 0;
+  return [...pos]
+    .sort((a,b)=>(a.ct.tipo==='FT'?0:1)-(b.ct.tipo==='FT'?0:1)||b.ct.horas-a.ct.horas)
+    .map(p => Object.assign({}, p, {
+      nombre: p.ct.tipo==='FT' ? `FT ${++iFT} · 48h` : `${p.nombre} #${++iPT}`
+    }));
+}
+
+function renderMix(){
+  const el = document.getElementById('mixCuerpo');
+  if(!el || !MIX_CTX) return;
+  const w = MIX_SEM, c = MIX_CTX;
+  const pos = c.posDe(w);
+  let html = `<div class="wtabs" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; justify-content:space-between">
+    <span style="display:flex; gap:6px; flex-wrap:wrap">`
+    + Array.from({length:c.reqSem.length},(_,i)=>
+        `<button class="wtab ${i===w?'active':''}" data-mixsem="${i}">${rotuloSem(i)}</button>`).join('')
+    + `</span>
+    <span style="display:flex; gap:6px; flex-wrap:wrap">
+      <button class="wtab ${MIX_VISTA==='sem'?'active':''}" data-mixvista="sem">Vista semana</button>
+      <button class="wtab ${MIX_VISTA==='dia'?'active':''}" data-mixvista="dia">Vista día (visual)</button>
+    </span>
+  </div>`;
+  if(MIX_VISTA === 'dia'){
+    const marcados = mixRotulado(pos);
+    const cov = coberturaSemana(marcados, w);
+    const prevDia = diaVisual, prevSem = semanaActual;
+    diaVisual = MIX_DIA; semanaActual = w;
+    try{ html += renderVistaDia(marcados, c.reqSem[w], cov, c.opd, c.cld); }
+    finally{ diaVisual = prevDia; semanaActual = prevSem; }
+  } else {
+    html += renderIdeal(pos, c.opd, c.cld, c.reqSem[w], w);
+  }
+  el.innerHTML = html;
+  el.querySelectorAll('[data-mixsem]').forEach(b =>
+    b.addEventListener('click', ()=>setSemanaMix(+b.dataset.mixsem)));
+  el.querySelectorAll('[data-mixvista]').forEach(b =>
+    b.addEventListener('click', ()=>setVistaMix(b.dataset.mixvista)));
+  // el selector de día que trae la vista día apunta al horario del equipo:
+  // acá se le cambia el destino para que mueva ESTA ventana
+  const selD = el.querySelector('#hVistaDia select');
+  if(selD){
+    selD.removeAttribute('onchange');
+    selD.value = String(MIX_DIA);
+    selD.addEventListener('change', ev=>setDiaMix(ev.target.value));
+  }
+  el.scrollTop = 0;
+}
+
+function cerrarMix(){
+  document.getElementById('capaMix').style.display = 'none';
 }
 
 
@@ -2568,7 +2735,7 @@ const EXIGIR_SECTORES = true;
 
 const PRESENCIA = {8:8, 10:11, 12:13, 14:15, 16:18};
 // ───────────────────────────────────────────────────────────────────────────
-// LA HORA DE DESCANSO  (v6.89)
+// LA HORA DE DESCANSO  (v6.95)
 // Un turno corrido de full time son 9 hs de presencia: 8 de trabajo + 1 de
 // descanso. Durante esa hora la persona está en el local pero NO está en la
 // caja, así que NO cubre demanda. Hasta la 6.59 el motor contaba las 9 hs como
@@ -2602,7 +2769,7 @@ const LARGOS_PT = [8,10,12,14,16];
 const VENT = { medit:[12,40], canasta:[12,40], parr:[14,28] };
 
 // ── Ventanas de sector, por local ────────────────────────────────────────────
-// Hasta la v6.89 la ventana de cada sector era una constante igual para los 92
+// Hasta la v6.95 la ventana de cada sector era una constante igual para los 92
 // locales: mediterranea 06:00-20:00 y canasta 06:00-20:00. En un local que abre
 // a las 06:00 eso dejaba a mediterranea aportando 0 en la primera hora, y la
 // tabla de cobertura mostraba 2 personas donde el local necesita 3 (linea +
@@ -4213,6 +4380,10 @@ function renderHorarios(){
   const local=DATA[document.getElementById('localSel').value];
   const out=document.getElementById('resHor');
   if(!RESULTADO){ out.innerHTML='<p class="small" style="padding:24px 0">Completá tu equipo en Configuración y tocá <b>Generar horario</b>.</p>'; return; }
+  // Red de seguridad: si por cualquier camino quedó seleccionada una semana que
+  // este mes no tiene (pasar de un mes de 5 semanas a uno de 4), acá se acota.
+  // Sin esto, la pestaña se dibujaba en blanco y no había forma de saber por qué.
+  if(!(semanaActual >= 0) || semanaActual >= RESULTADO.reqSem.length) semanaActual = 0;
   const {reqSem, opd, cld}=RESULTADO;
   const w=semanaActual;
   const pos=posSemana(w);   // con turnos rotativos, el plan que le toca a esta semana
@@ -5019,10 +5190,17 @@ function renderIdeal(pos, opd, cld, req, w){
   const nFT = pos.filter(p=>p.ct.tipo==='FT').length, nPT = pos.length-nFT;
   const nFTact = EQUIPO.filter(e=>CONTRATOS[e.contrato]?.tipo==='FT').length, nPTact = EQUIPO.length-nFTact;
   const dif = costoActual - costoIdeal;
+  // Sin equipo cargado no hay con qué comparar: mostrar una diferencia contra
+  // cero diría que el mix "cuesta de más", que es falso y confunde.
+  const hayEquipo = EQUIPO.length > 0;
   let html = `<div class="cards" style="margin-bottom:14px">
-    <div class="card"><div class="lbl">Tu equipo hoy</div><div class="val">${nFTact} FT + ${nPTact} PT</div><div class="note">Costo actual: <b>${fmtGsM(costoActual)}</b></div></div>
+    ${hayEquipo
+      ? `<div class="card"><div class="lbl">Tu equipo hoy</div><div class="val">${nFTact} FT + ${nPTact} PT</div><div class="note">Costo actual: <b>${fmtGsM(costoActual)}</b></div></div>`
+      : `<div class="card"><div class="lbl">Tu equipo hoy</div><div class="val" style="font-size:19px; color:var(--muted)">sin cargar</div><div class="note">Cargá tu equipo en Configuración para comparar los dos costos.</div></div>`}
     <div class="card"><div class="lbl">Mix ideal para esta demanda</div><div class="val">${nFT} FT + ${nPT} PT</div><div class="note">Costo ideal: <b>${fmtGsM(costoIdeal)}</b></div></div>
-    <div class="card" style="border-color:${dif>=0?'var(--accent)':'var(--warn)'}"><div class="lbl">Diferencia mensual</div><div class="val" style="color:${dif>=0?'var(--accent)':'var(--warn)'}">${dif>=0?'':'−'}${fmtGsM(Math.abs(dif))}</div><div class="note">${dif>=0?'lo que podrías ahorrar':'el ideal sale más caro que tu equipo actual'} con este mix</div></div>
+    ${hayEquipo
+      ? `<div class="card" style="border-color:${dif>=0?'var(--accent)':'var(--warn)'}"><div class="lbl">Diferencia mensual</div><div class="val" style="color:${dif>=0?'var(--accent)':'var(--warn)'}">${dif>=0?'':'−'}${fmtGsM(Math.abs(dif))}</div><div class="note">${dif>=0?'lo que podrías ahorrar':'el ideal sale más caro que tu equipo actual'} con este mix</div></div>`
+      : `<div class="card"><div class="lbl">Diferencia mensual</div><div class="val" style="font-size:19px; color:var(--muted)">—</div><div class="note">Se calcula cuando hay un equipo cargado contra el cual comparar.</div></div>`}
   </div>
   <div class="small" style="margin-bottom:10px">Este mix cubre exactamente la misma demanda que tu horario actual y se calcula con el mismo motor que la herramienta de Mix de Contratos, así que coincide con el número oficial de la cadena.</div>
   ${ROTATIVO ? `<div class="okbanner" style="margin-bottom:10px">Turnos rotativos activados: este mix también rota. Estás viendo la <b>semana ${w+1}</b>, que va con la vuelta <b>${w%2===1?'B (los full time cambiados de banda)':'A'}</b>. Cambiá de semana arriba para ver la otra vuelta.</div>` : ''}
@@ -5070,10 +5248,18 @@ function postRenderHorarios(){
   if(_avisoSwap) avisoSwap(_avisoSwap.bien, _avisoSwap.txt);
 }
 
-function descargarExcel(){
-  if(!RESULTADO){ alert('Generá el horario primero.'); return; }
+function descargarExcel(modo){
+  const esIdeal = (modo === 'ideal');
+  // El mix ideal tiene su propio contexto, calculado con la demanda del local:
+  // no depende de que haya un horario generado.
+  const ctx = esIdeal ? (MIX_CTX || (MIX_CTX = mixContexto())) : null;
+  if(esIdeal && !ctx){ alert('Elegí un local primero.'); return; }
+  if(!esIdeal && !RESULTADO){ alert('Generá el horario primero.'); return; }
   const loc = document.getElementById('localSel').value;
-  const {opd, cld} = RESULTADO;
+  const {opd, cld} = esIdeal ? ctx : RESULTADO;
+  const nSemX = esIdeal ? ctx.reqSem.length : nSem();
+  // posiciones de la semana según lo que se esté bajando
+  const posDe = (w) => esIdeal ? ctx.posDe(w) : posSemana(w);
   const openG = Math.min(...opd), closeG = Math.max(...cld);
   const horas = []; for(let s=openG; s<closeG; s+=2) horas.push(Math.floor(s/2));
   const ancho = Math.max(13, horas.length + 1);
@@ -5081,7 +5267,27 @@ function descargarExcel(){
 
   // Una fila por persona, con el horario tal como se ve en la pantalla
   function filasEquipo(w){
-    const pos = posSemana(w);
+    const pos = posDe(w);
+    if(esIdeal){
+      // El mix ideal son PUESTOS, no personas: no hay nombre, ni condición, ni
+      // sector asignado. Se numeran por contrato para que se puedan nombrar
+      // después, y van los full time primero, como en la pantalla.
+      const out = [[{v:'Puesto',s:ENC},{v:'Contrato',s:ENC},
+                    ...Array.from({length:7},(_,d)=>({v:rotuloDia(w,d), s:ENC})),
+                    {v:'Horas',s:ENC}]];
+      const orden = [...pos].sort((a,b)=>
+        (b.ct.tipo==='FT') - (a.ct.tipo==='FT') || b.ct.horas - a.ct.horas);
+      orden.forEach((q,i)=>{
+        const porDia = Array.from({length:7},()=>[]);
+        for(const a of q.asig) porDia[a.d].push(a);
+        const cols = porDia.map(as => as.length
+          ? as.sort((x,y)=>x.e-y.e).map(a=>slotToHM(a.e)+'–'+slotToHM(a.e+a.pres)).join(' / ')
+          : 'Día Libre');
+        const hs = q.asig.reduce((t,a)=>t+a.len,0)/2;
+        out.push([ 'Puesto ' + (i+1), nombrePos(q), ...cols, {v:hs, s:NUM} ]);
+      });
+      return out;
+    }
     const out = [[{v:'Persona',s:ENC},{v:'Contrato',s:ENC},{v:'Condición',s:ENC},
                   {v:'Sector',s:ENC},{v:'Estado',s:ENC},{v:'Cortado',s:ENC},
                   ...Array.from({length:7},(_,d)=>({v:rotuloDia(w,d), s:ENC})),
@@ -5118,7 +5324,7 @@ function descargarExcel(){
   // Sólo se miran las medias horas en que el local está abierto: si no, la hora de
   // cierre arrastraba el conteo a cero (los domingos que cierran 22:30, por ejemplo).
   function filasResumen(w){
-    const cov = coberturaSemana(posSemana(w), w);
+    const cov = coberturaSemana(posDe(w), w);
     const out = [[{v:'Día',s:ENC}, ...horas.map(h=>({v:String(h).padStart(2,'0')+':00', s:ENC}))]];
     for(let d=0; d<7; d++){
       out.push([ rotuloDia(w,d), ...horas.map(h=>{
@@ -5132,14 +5338,16 @@ function descargarExcel(){
   }
 
   const hojas = [];
-  for(let w=0; w<nSem(); w++){
+  for(let w=0; w<nSemX; w++){
     const a = fechaDe(w,0), b = fechaDe(w,6);
     const eq = filasEquipo(w), rs = filasResumen(w);
     const filas = [];
-    filas.push([{v:`Horario de la semana del ${diaMes(a)} de ${MESES_L[a.getUTCMonth()]}`
+    filas.push([{v:(esIdeal ? 'Mix ideal sugerido · semana del ' : 'Horario de la semana del ')
+                  + `${diaMes(a)} de ${MESES_L[a.getUTCMonth()]}`
                   + ` al ${diaMes(b)} de ${MESES_L[b.getUTCMonth()]}`, s:T}]);
-    filas.push([{v:`${loc} · ${MESES_L[MES_SEL-1]} de ${ANIO_SEL} · semana ${w+1} de ${nSem()}`
-                  + ` · turnos rotativos: ${ROTATIVO ? 'APLICADOS' : 'no aplicados'}`, s:B}]);
+    filas.push([{v:`${loc} · ${MESES_L[MES_SEL-1]} de ${ANIO_SEL} · semana ${w+1} de ${nSemX}`
+                  + ` · turnos rotativos: ${ROTATIVO ? 'APLICADOS' : 'no aplicados'}`
+                  + (esIdeal ? ' · dotación que el sistema propone para esta demanda, no el equipo actual del local' : ''), s:B}]);
     // Con qué ventanas de sector se generó. Es el dato que más cambia el horario
     // y hasta acá no viajaba con el archivo: al mirar un Excel había que
     // deducirlo de las horas de salida, o pedírselo al gerente.
@@ -5160,7 +5368,10 @@ function descargarExcel(){
     hojas.push({
       nombre: `S${w+1} ${diaMes(a)}${MESES_A[a.getUTCMonth()]}-${diaMes(b)}${MESES_A[b.getUTCMonth()]}`.slice(0,31),
       filas,
-      cols: [26,10,22,19,15,8, ...Array.from({length:7},()=>17), 7,
+      cols: esIdeal
+        ? [12,13, ...Array.from({length:7},()=>17), 7,
+           ...Array.from({length:Math.max(0,horas.length-7)},()=>7)]
+        : [26,10,22,19,15,8, ...Array.from({length:7},()=>17), 7,
              ...Array.from({length:Math.max(0,horas.length-7)},()=>7)],
       merges: [[0,0,0,ancho-1],[1,0,1,ancho-1],[rRes,0,rRes,ancho-1],[rRes+1,0,rRes+1,ancho-1]],
     });
@@ -5175,7 +5386,7 @@ function descargarExcel(){
     ).join('\n\n');
 
   const bytes = xlsxGenerar(hojas);
-  bajarArchivo(`Horario_${loc.replace(/[^a-z0-9]/gi,'_')}_${MESES_A[MES_SEL-1]}${ANIO_SEL}.xlsx`,
+  bajarArchivo(`${esIdeal?'MixIdeal':'Horario'}_${loc.replace(/[^a-z0-9]/gi,'_')}_${MESES_A[MES_SEL-1]}${ANIO_SEL}.xlsx`,
                bytes, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', alt);
 }
 function setVista(v){ vistaActual=v; renderHorarios(); }
@@ -5783,7 +5994,7 @@ function aplicarCfg(cfg, avisar){
         if(cfg.horarios.dom[0])document.getElementById('doOpen').value=cfg.horarios.dom[0];
         if(cfg.horarios.dom[1])document.getElementById('doClose').value=cfg.horarios.dom[1];
       }
-      // ventanas de sector guardadas. Un archivo anterior a la v6.89 no las
+      // ventanas de sector guardadas. Un archivo anterior a la v6.95 no las
       // trae: queda el valor de arranque (el horario del local) y la casilla
       // sin confirmar, así que la herramienta se las vuelve a pedir.
       if(cfg.ventanas && typeof cfg.ventanas==='object'){
@@ -5950,7 +6161,11 @@ sel.addEventListener('change',()=>{ cargarHorarios(DATA[sel.value]); RESULTADO=n
   // cambiar de local hay que volver a pintarla, y soltar el sector fijado a
   // alguien si el local nuevo no lo tiene.
   for(const e of EQUIPO) normalizarEmpleado(e);
-  renderEquipo(); renderHorarios(); refrescarIdeal(); });
+  renderEquipo(); renderHorarios(); refrescarIdeal();
+  // Y, sobre todo: traer el trabajo guardado del local al que se entra. Sin
+  // esto el equipo del local anterior se quedaba pegado, y Administración —que
+  // salta de local en local— veía la dotación de otro.
+  restaurarTrabajo(sel.value); });
 document.getElementById('btnEquipo').addEventListener('click',aplicarEquipo);
 document.getElementById('btnPiso').addEventListener('click', calcularPiso);
 renderCtChecks();
@@ -6011,6 +6226,11 @@ document.getElementById('capaHor').addEventListener('click', e=>{ if(e.target.id
 document.getElementById('btnGuardar').addEventListener('click',guardar);
 document.getElementById('btnCargar').addEventListener('click',()=>document.getElementById('fileCargar').click());
 document.getElementById('btnCero').addEventListener('click', empezarDeCero);
+document.getElementById('btnMixX').addEventListener('click', cerrarMix);
+document.getElementById('btnMixXls').addEventListener('click', ()=>descargarExcel('ideal'));
+document.addEventListener('keydown', ev=>{
+  if(ev.key === 'Escape' && document.getElementById('capaMix').style.display === 'flex') cerrarMix();
+});
 document.getElementById('btnGerencial').addEventListener('click', abrirGerencial);
 document.getElementById('btnGerX').addEventListener('click', ()=>{
   document.getElementById('capaGer').style.display='none';

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Horario del Local · Dotación Actual · v6.82</title>
+<title>Horario del Local · Dotación Actual · v6.89</title>
 <style>
   :root{
     /* La herramienta es de tema claro. Sin esto, un navegador en modo oscuro dibuja
@@ -499,6 +499,7 @@
 
   <div class="box" id="boxSectores" style="display:none">
     <h3>Horario de tus sectores</h3>
+    <div id="secAdmin" class="okbanner" style="display:none; font-size:13.5px; font-weight:600"></div>
     <div class="small" style="margin-bottom:9px">Tu local atiende sectores además de la línea de cajas. Cargá desde y hasta qué hora abre cada uno: la herramienta exige <b>una persona como mínimo</b> en cada sector mientras esté abierto, igual que en la línea de cajas. La línea no se carga acá — abre y cierra con tu local.</div>
     <div id="gridSectores" class="rowflex" style="gap:18px; flex-wrap:wrap; align-items:center"></div>
     <div class="small" id="secNota" style="margin-top:6px"></div>
@@ -1036,6 +1037,7 @@ const MANUAL_SECS = [
   { id:'excel', t:'Descargar el Excel', h:()=>`
     <p>El botón <b>⬇ Descargar Excel</b> baja el mes entero: <b>una hoja por semana</b>, cada una con el título "Horario de la semana del X al Y", el horario tal como se ve en pantalla y, abajo, un resumen con los días en filas y las horas en columnas contando cuánta gente atiende en cada hora.</p>
     <p>Se cuenta la gente presente durante <b>toda</b> la hora, así que el Excel y el mapa de cobertura no se contradicen. Las celdas vacías son horas con el local cerrado.</p>
+    <p>Debajo del título, cada hoja dice con qué se generó ese horario: si los <b>turnos rotativos</b> están aplicados o no, y el <b>horario de cada sector</b> que se usó. Es el dato que más confunde al mirar el Excel: si las cuatro semanas salen iguales, lo primero a revisar es esa línea.</p>
     <p class="mnota">El archivo se arma acá adentro: no necesitás internet para bajarlo.</p>
     <p>Si abriste la herramienta dentro de una <b>vista previa</b> (por ejemplo el panel de un chat), el navegador puede bloquear la descarga sin avisar. La herramienta lo intenta igual y, si estás en ese caso, te deja un aviso abajo con un atajo para ver el horario en texto y copiarlo a Excel. Lo cómodo: usá el link publicado, o guardá el archivo HTML en tu computadora y abrilo desde ahí.</p>` },
 
@@ -1076,6 +1078,12 @@ const MANUAL_SECS = [
   // Sólo se muestra con el acceso de Administración: el comparador no existe
   // para un gerente de local, y contarle que hay un ranking entre locales abre
   // una discusión que no aporta a su trabajo.
+  { id:'sinsectores', t:'Dimensionar sin el horario de sectores (Administración)', admin:true, h:()=>`
+    <p>A un gerente de local la herramienta <b>no lo deja generar</b> hasta que cargue desde y hasta qué hora abren sus sectores. Eso es a propósito: de ese dato sale el piso de una persona por sector, y con la ventana mal el local aparece con menos gente de la que necesita.</p>
+    <p>Con el acceso de <b>Administración</b> esa exigencia no aplica. Si el local todavía no cargó sus horarios, se genera igual usando el <b>estándar de la cadena</b> —Mediterránea ${slotToHM(VENT.medit[0])}–${slotToHM(VENT.medit[1])}, Canasta ${slotToHM(VENT.canasta[0])}–${slotToHM(VENT.canasta[1])}, parrillada sábado y domingo— y el horario lo dice arriba, en un aviso, para que nadie lo confunda con un dato del local.</p>
+    <p>Está pensado para <b>dimensionar dotación</b>: cuánta gente y de qué contrato hace falta, que es lo que necesita Selección para contratar. A esa pregunta el horario fino de cada sector casi no la mueve. Lo que <b>no</b> sirve es para colgar el horario en el local: ese tiene que salir con los horarios reales del gerente.</p>
+    <p class="mnota">De los ${Object.keys(DATA).length} locales, sólo ${(()=>{let n=0;for(const L of Object.values(DATA)) if(L.hasMedit||L.hasPatio||L.hasCanasta||L.hasParr) n++; return n;})()} tienen sectores. En los demás nunca se pide nada.</p>` },
+
   { id:'gerencial', t:'Vista Gerencial (Administración)', admin:true, h:()=>`
     <p>En la barra azul, el botón amarillo <b>📊 Vista Gerencial</b> abre la herramienta de <b>dotación ideal y mix de contratos</b> de los ${Object.keys(DATA).length} locales, sin salir de acá. Se entra desde cualquier local y es exclusiva de Administración.</p>
     <p>Contesta una pregunta distinta a la de esta herramienta. Acá armás el mejor horario con <b>la gente que ya tenés</b>; allá se calcula, para cada local, <b>cuánta gente y de qué contrato</b> convendría tener, y cuánto costaría comparado con la dotación de hoy.</p>
@@ -2560,7 +2568,7 @@ const EXIGIR_SECTORES = true;
 
 const PRESENCIA = {8:8, 10:11, 12:13, 14:15, 16:18};
 // ───────────────────────────────────────────────────────────────────────────
-// LA HORA DE DESCANSO  (v6.82)
+// LA HORA DE DESCANSO  (v6.89)
 // Un turno corrido de full time son 9 hs de presencia: 8 de trabajo + 1 de
 // descanso. Durante esa hora la persona está en el local pero NO está en la
 // caja, así que NO cubre demanda. Hasta la 6.59 el motor contaba las 9 hs como
@@ -2588,11 +2596,14 @@ const DESC_MIN = 6, DESC_FIN = 4;
 // cadena (el 0,5%).
 const TOPE_CORTE = 3;
 const LARGOS_PT = [8,10,12,14,16];
-const VENT = { medit:[14,40], canasta:[12,40], parr:[14,28] };
+// Mediterránea abre con el local, a las 06:00, no a las 07:00: en la práctica
+// el sector levanta la persiana junto con las cajas. Con 07:00 la primera hora
+// quedaba sin nadie exigido y la tapaba alguien sacado de la línea.
+const VENT = { medit:[12,40], canasta:[12,40], parr:[14,28] };
 
 // ── Ventanas de sector, por local ────────────────────────────────────────────
-// Hasta la v6.82 la ventana de cada sector era una constante igual para los 92
-// locales: mediterranea 07:00-20:00 y canasta 06:00-20:00. En un local que abre
+// Hasta la v6.89 la ventana de cada sector era una constante igual para los 92
+// locales: mediterranea 06:00-20:00 y canasta 06:00-20:00. En un local que abre
 // a las 06:00 eso dejaba a mediterranea aportando 0 en la primera hora, y la
 // tabla de cobertura mostraba 2 personas donde el local necesita 3 (linea +
 // canasta + mediterranea). El piso minimo de 1 por sector ya existia y estaba
@@ -2790,6 +2801,17 @@ function pintarSectores(){
   const secs=sectoresActuales();
   if(!secs.length){ box.style.display='none'; return; }
   box.style.display='';
+  // Para Selección y RRHH, que entran con Administración, este recuadro no es
+  // un trámite: pueden dejarlo vacío. Hay que decírselo en una línea, acá
+  // mismo, o lo van a llenar igual sin tener el dato.
+  const ba=document.getElementById('secAdmin');
+  if(ba){
+    ba.style.display = ES_ADMIN ? '' : 'none';
+    if(ES_ADMIN) ba.innerHTML = '✓ <b>No hace falta que cargues nada acá.</b> '
+      + 'Si dejás los campos vacíos se dimensiona con el horario estándar de la cadena: '
+      + '<b>Mediterránea y Canasta ' + slotToHM(VENT.medit[0]) + '–' + slotToHM(VENT.medit[1])
+      + ', parrillada sábado y domingo ' + slotToHM(VENT.parr[0]) + '–' + slotToHM(VENT.parr[1]) + '</b>.';
+  }
   const g=document.getElementById('gridSectores');
   const DIAS3=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
   g.innerHTML = secs.map(n=>{
@@ -2840,6 +2862,13 @@ function notaSectores(){
   const pq = sectoresActuales().indexOf('parrillada')>=0
     ? ' <b>La parrillada no se le asigna a nadie en Mi equipo</b>: la cubre quien esté trabajando los días que marques, y en el horario le aparece sólo esos días.'
     : '';
+  if(f.length && ES_ADMIN){
+    el.innerHTML = '<b>Falta el horario de: '+listaY(f)+'.</b> Con el acceso de Administración '
+      + 'podés generar igual: se dimensiona con el <b>estándar de la cadena</b> ('
+      + listaY(f.map(n=>n+' '+ventanaUsada(n))) + ') y el horario lo avisa. '
+      + 'Para el horario definitivo del local, el gerente tiene que cargar el suyo.' + pq;
+    return;
+  }
   el.innerHTML = (f.length
     ? '<b>Falta cargar el horario de: '+listaY(f)+'.</b> Sin eso no se puede generar el horario — '
       + 'de este dato sale la regla de una persona como mínimo en cada sector mientras está abierto.'
@@ -3043,8 +3072,14 @@ function asignarEquipo(local){
   (function(){
     for(const nom of sectoresAsignables(local)){
       const win = ventOf(CLAVE_SEC[nom]);
-      const gente = EQUIPO.filter(e => e && e.sector === nom);
-      if(!gente.length) continue;
+      const todos = EQUIPO.filter(e => e && e.sector === nom);
+      if(!todos.length) continue;
+      // Sólo se reparte a quien la herramienta puede mover. Un part time con su
+      // horario fijado por contrato ya tiene hora: no se le puede pedir que abra
+      // el sector, y su disponibilidad —que es nada más que su propio turno— no
+      // tiene por qué achicarle la ventana a los demás.
+      const libres = todos.filter(e => !tieneFijo(e));
+      const gente = libres.length ? libres : todos;
       const dias = [0,1,2,3,4,5,6];
       // El reparto se hace sobre el tramo de la ventana que este grupo REALMENTE
       // puede trabajar: la ventana cruzada con la disponibilidad de la gente y
@@ -3225,8 +3260,15 @@ function asignarEquipo(local){
       if(ob && ob.dias.includes(d) && lista.length){
         const tols = ob.punta ? [0, 1, SEC_TOL, SEC_TOL*2, SEC_TOL*3]
                               : [SEC_TOL, SEC_TOL*2, SEC_TOL*3];
+        // Para las puntas el juego es de un solo lado: el que abre puede entrar
+        // antes de su objetivo pero nunca después, y el que cierra puede entrar
+        // después pero nunca antes. Treinta minutos para el lado equivocado
+        // dejan la punta del sector descubierta igual.
+        const lado = !ob.punta ? (dif => Math.abs(dif))
+                   : (ob.abre ? (dif => dif <= 0 ? -dif : 1e9)
+                              : (dif => dif >= 0 ?  dif : 1e9));
         for(const tol of tols){
-          const cerca = lista.filter(o => Math.abs(o.entry - ob.t) <= tol);
+          const cerca = lista.filter(o => lado(o.entry - ob.t) <= tol);
           if(cerca.length){ lista.length = 0; for(const o of cerca) lista.push(o); break; }
         }
       }
@@ -3870,7 +3912,10 @@ function asignablesActuales(){
 // Días en que abre la parrillada de este local, declarados por el gerente.
 function parrDias(){
   const v = VENT_LOC && VENT_LOC.parrDias;
-  return (Array.isArray(v) && v.length === 7) ? v : [0,0,0,0,0,0,0];
+  if(Array.isArray(v) && v.length === 7 && v.some(x=>!!x)) return v;
+  // Dimensionando desde Administración, sin el dato del local, se usa el
+  // estándar de la cadena: la parrillada abre el fin de semana.
+  return ES_ADMIN ? [0,0,0,0,0,1,1] : [0,0,0,0,0,0,0];
 }
 function parrAbre(d){ return !!parrDias()[d]; }
 function parrListos(){ return parrDias().some(x=>!!x); }
@@ -3884,6 +3929,21 @@ function ventanaSector(nom){
     const D=['lun','mar','mié','jue','vie','sáb','dom'], pd=parrDias();
     const ds=D.filter((x,i)=>pd[i]);
     txt += ds.length ? (' · ' + ds.join(' y ')) : ' · sin días marcados';
+  }
+  return txt;
+}
+
+// La ventana con la que REALMENTE se dimensionó: la del local si la cargó, y si
+// no, la estándar de la cadena. Es lo que hay que mostrar cuando se genera desde
+// Administración sin el dato del local.
+function ventanaUsada(nom){
+  const k = CLAVE_SEC[nom] || 'medit';
+  const v = ventOf(k);
+  let txt = slotToHM(v[0]) + '–' + slotToHM(v[1]);
+  if(nom === 'parrillada'){
+    const D=['lun','mar','mié','jue','vie','sáb','dom'], pd=parrDias();
+    const ds=D.filter((x,i)=>pd[i]);
+    txt += ds.length ? (' · ' + ds.join(' y ')) : '';
   }
   return txt;
 }
@@ -4292,6 +4352,14 @@ function renderHorarios(){
   </div>`;
 
   html+=`<div id="hAvisos">`;
+  // Si se dimensionó sin el horario real de los sectores, el horario tiene que
+  // decirlo: es la diferencia entre un dato del local y una estimación nuestra.
+  if(ES_ADMIN){
+    const fs = faltanSectores();
+    if(fs.length){
+      html+=`<div class="alertbanner">◔ <b>Dimensionado con el horario estándar de sectores</b> (${listaY(fs.map(n=>n+' '+ventanaUsada(n)))}), porque este local todavía no cargó el suyo. Sirve para dimensionar la dotación; para el horario que se va a colgar en el local, pedile al gerente que cargue sus horarios reales en Configuración.</div>`;
+    }
+  }
   if(sinH.length) html+=`<div class="warnbanner">⚠ Sin horario posible: ${sinH.map(p=>p.nombre).join(', ')} — su disponibilidad no permite cumplir su contrato en el horario del local. Ajustá su franja o días en Configuración.</div>`;
   if(franjas.falta.length){
     html+=`<div class="warnbanner">⚠ Faltan personas en: ${franjas.falta.slice(0,8).map(f=>`${DIAS[f.d]} ${slotToHM(f.ini)}–${slotToHM(f.fin)}`).join(' · ')}${franjas.falta.length>8?' · …':''}</div>`;
@@ -5070,7 +5138,18 @@ function descargarExcel(){
     const filas = [];
     filas.push([{v:`Horario de la semana del ${diaMes(a)} de ${MESES_L[a.getUTCMonth()]}`
                   + ` al ${diaMes(b)} de ${MESES_L[b.getUTCMonth()]}`, s:T}]);
-    filas.push([{v:`${loc} · ${MESES_L[MES_SEL-1]} de ${ANIO_SEL} · semana ${w+1} de ${nSem()}`, s:B}]);
+    filas.push([{v:`${loc} · ${MESES_L[MES_SEL-1]} de ${ANIO_SEL} · semana ${w+1} de ${nSem()}`
+                  + ` · turnos rotativos: ${ROTATIVO ? 'APLICADOS' : 'no aplicados'}`, s:B}]);
+    // Con qué ventanas de sector se generó. Es el dato que más cambia el horario
+    // y hasta acá no viajaba con el archivo: al mirar un Excel había que
+    // deducirlo de las horas de salida, o pedírselo al gerente.
+    {
+      const secs = sectoresActuales();
+      if(secs.length){
+        const txt = secs.map(n => n.charAt(0).toUpperCase() + n.slice(1) + ' ' + ventanaUsada(n)).join(' · ');
+        filas.push([{v:'Horario de los sectores: ' + txt, s:B}]);
+      }
+    }
     filas.push([]);
     for(const f of eq) filas.push(f);
     filas.push([]);
@@ -5704,7 +5783,7 @@ function aplicarCfg(cfg, avisar){
         if(cfg.horarios.dom[0])document.getElementById('doOpen').value=cfg.horarios.dom[0];
         if(cfg.horarios.dom[1])document.getElementById('doClose').value=cfg.horarios.dom[1];
       }
-      // ventanas de sector guardadas. Un archivo anterior a la v6.82 no las
+      // ventanas de sector guardadas. Un archivo anterior a la v6.89 no las
       // trae: queda el valor de arranque (el horario del local) y la casilla
       // sin confirmar, así que la herramienta se las vuelve a pedir.
       if(cfg.ventanas && typeof cfg.ventanas==='object'){
@@ -5789,7 +5868,7 @@ function generar(){
   // El horario de los sectores no tiene valor por defecto que sirva: de el sale
   // el piso de una persona por sector, y con la ventana mal el local aparece
   // con menos gente de la que realmente necesita en la apertura.
-  if(!ventanasListas()){
+  if(!ventanasListas() && !ES_ADMIN){
     alert('Antes de generar, cargá el horario de: '+listaY(faltanSectores())+'.\n\n'
         + 'La herramienta necesita saber desde y hasta qué hora abre cada sector de tu local '
         + 'para exigir una persona como mínimo en cada uno mientras está abierto.\n\n'

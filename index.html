@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Horario del Local · Dotación Actual · v7.01</title>
+<title>Horario del Local · Dotación Actual · v7.02</title>
 <style>
   :root{
     /* La herramienta es de tema claro. Sin esto, un navegador en modo oscuro dibuja
@@ -1563,7 +1563,7 @@ function guardarClave(){
 //  Vacío = la Vista Gerencial usa la foto fija que trae adentro. Sigue
 //  funcionando igual, sólo que los datos no se actualizan solos.
 //
-window.PADRON_URL = '';
+window.PADRON_URL = 'https://script.google.com/macros/s/AKfycbx2GDc3brnZwWkq1gwB0m3Oim-do-ptZgW2z8aeUXeROB5ZQmiPO8QM9Eg8q-tCZHtbhA/exec';
 //
 //  ↑↑↑  no hace falta tocar nada más en todo el archivo  ↑↑↑
 // ═══════════════════════════════════════════════════════════════════
@@ -2751,7 +2751,7 @@ const EXIGIR_SECTORES = true;
 
 const PRESENCIA = {8:8, 10:11, 12:13, 14:15, 16:18};
 // ───────────────────────────────────────────────────────────────────────────
-// LA HORA DE DESCANSO  (v7.01)
+// LA HORA DE DESCANSO  (v7.02)
 // Un turno corrido de full time son 9 hs de presencia: 8 de trabajo + 1 de
 // descanso. Durante esa hora la persona está en el local pero NO está en la
 // caja, así que NO cubre demanda. Hasta la 6.59 el motor contaba las 9 hs como
@@ -2785,7 +2785,7 @@ const LARGOS_PT = [8,10,12,14,16];
 const VENT = { medit:[12,40], canasta:[12,40], parr:[14,28] };
 
 // ── Ventanas de sector, por local ────────────────────────────────────────────
-// Hasta la v7.01 la ventana de cada sector era una constante igual para los 92
+// Hasta la v7.02 la ventana de cada sector era una constante igual para los 92
 // locales: mediterranea 06:00-20:00 y canasta 06:00-20:00. En un local que abre
 // a las 06:00 eso dejaba a mediterranea aportando 0 en la primera hora, y la
 // tabla de cobertura mostraba 2 personas donde el local necesita 3 (linea +
@@ -6010,7 +6010,7 @@ function aplicarCfg(cfg, avisar){
         if(cfg.horarios.dom[0])document.getElementById('doOpen').value=cfg.horarios.dom[0];
         if(cfg.horarios.dom[1])document.getElementById('doClose').value=cfg.horarios.dom[1];
       }
-      // ventanas de sector guardadas. Un archivo anterior a la v7.01 no las
+      // ventanas de sector guardadas. Un archivo anterior a la v7.02 no las
       // trae: queda el valor de arranque (el horario del local) y la casilla
       // sin confirmar, así que la herramienta se las vuelve a pedir.
       if(cfg.ventanas && typeof cfg.ventanas==='object'){
